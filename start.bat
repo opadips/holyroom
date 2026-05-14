@@ -1,15 +1,35 @@
 @echo off
-title Holyroom Launcher
-echo Starting Holyroom...
+title Holyroom - First Launch & Start
+
+:: Store the root directory of the project
+set ROOT=%~dp0
+
+:: Check and install server dependencies if needed
+if not exist "%ROOT%server\node_modules" (
+    echo.
+    echo [INFO] Installing server dependencies...
+    cd /d "%ROOT%server"
+    call npm install
+    cd /d "%ROOT%"
+)
+
+:: Check and install client dependencies if needed
+if not exist "%ROOT%client\node_modules" (
+    echo.
+    echo [INFO] Installing client dependencies...
+    cd /d "%ROOT%client"
+    call npm install
+    cd /d "%ROOT%"
+)
+
+:: Start the server and client
 echo.
+echo [INFO] Starting Holyroom Server...
+start "Holyroom Server" cmd /k "cd /d "%ROOT%server" && npm run dev"
 
-echo Starting Server...
-start "Holyroom Server" cmd /k "cd server && npm run dev"
-
-echo Starting Client...
-start "Holyroom Client" cmd /k "cd client && npm start"
+echo [INFO] Starting Holyroom Client...
+start "Holyroom Client" cmd /k "cd /d "%ROOT%client" && npm start"
 
 echo.
-echo Both server and client are starting in separate windows.
-echo Close this window or press any key to exit launcher.
+echo All done! Both windows should open shortly.
 pause >nul
