@@ -1,0 +1,447 @@
+/* ═══════════════════════════════════════════════════════════════
+   AmbientLight.css — UI-Level Ambient Lighting System
+   Holyroom
+
+   لایه‌بندی z-index:
+   AtmosphericBackground  z-0   (پس‌زمینه)
+   AmbientLight           z-1   (نور محیطی روی UI)
+   MainLayout / LoginPage z-10  (محتوا)
+
+   همه لایه‌ها pointer-events: none هستند.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root ──────────────────────────────────────────────────── */
+.al-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1;          /* بین background (0) و UI (10) */
+  pointer-events: none;
+  overflow: hidden;
+  isolation: isolate;
+  will-change: transform;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CORNER ACCENT FILLS
+   گوشه‌های صفحه — نور بسیار کم‌رنگ که احساس محصور‌بودن
+   در یک فضای بسته رو می‌ده (مثل control room)
+   ══════════════════════════════════════════════════════════════ */
+.al-corner {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  filter: blur(80px);
+  will-change: opacity;
+}
+
+/* بالا-چپ: بنفش عمیق */
+.al-corner--tl {
+  top: -100px;
+  left: -100px;
+  background: radial-gradient(
+    circle at 0% 0%,
+    rgba(100, 50, 200, 0.12) 0%,
+    rgba(80,  35, 160, 0.06) 40%,
+    transparent 70%
+  );
+  animation: cornerPulse 22s ease-in-out infinite;
+}
+
+/* بالا-راست: آبی-ایندیگو */
+.al-corner--tr {
+  top: -100px;
+  right: -100px;
+  background: radial-gradient(
+    circle at 100% 0%,
+    rgba(60,  70, 200, 0.10) 0%,
+    rgba(40,  50, 160, 0.05) 40%,
+    transparent 70%
+  );
+  animation: cornerPulse 28s ease-in-out infinite reverse;
+  animation-delay: -10s;
+}
+
+/* پایین-راست: بنفش کم */
+.al-corner--br {
+  bottom: -100px;
+  right: -100px;
+  background: radial-gradient(
+    circle at 100% 100%,
+    rgba(120, 40, 180, 0.08) 0%,
+    rgba(80,  25, 140, 0.04) 40%,
+    transparent 70%
+  );
+  animation: cornerPulse 34s ease-in-out infinite;
+  animation-delay: -18s;
+}
+
+/* پایین-چپ: سیان بسیار کم */
+.al-corner--bl {
+  bottom: -100px;
+  left: -100px;
+  background: radial-gradient(
+    circle at 0% 100%,
+    rgba(20, 160, 200, 0.05) 0%,
+    rgba(10, 100, 160, 0.025) 40%,
+    transparent 70%
+  );
+  animation: cornerPulse 26s ease-in-out infinite reverse;
+  animation-delay: -6s;
+}
+
+@keyframes cornerPulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%       { opacity: 1.0; transform: scale(1.12); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PANEL HALOS
+   هاله نور دور هر ناحیه اصلی UI — Header، Sidebar، InputBar
+   این‌ها «لبه» پنل‌ها رو نورانی می‌کنند بدون اینکه خود پنل
+   رو تغییر بدیم.
+   ══════════════════════════════════════════════════════════════ */
+.al-halo {
+  position: absolute;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* هاله بالا — Header را از زیر روشن می‌کنه */
+.al-halo--top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(
+    180deg,
+    rgba(100, 55, 200, 0.09) 0%,
+    rgba(80,  40, 170, 0.05) 35%,
+    transparent 100%
+  );
+  /* لبه پایینی Header: خط نور بسیار ظریف */
+  box-shadow: 0 1px 0 rgba(140, 80, 255, 0.08);
+  filter: blur(2px);
+  animation: haloBreath 18s ease-in-out infinite;
+}
+
+/* هاله چپ — Sidebar را از راست روشن می‌کنه */
+.al-halo--left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 320px;
+  background: linear-gradient(
+    90deg,
+    rgba(90, 45, 180, 0.08) 0%,
+    rgba(70, 35, 150, 0.04) 50%,
+    transparent 100%
+  );
+  filter: blur(3px);
+  animation: haloBreath 24s ease-in-out infinite reverse;
+  animation-delay: -8s;
+}
+
+/* هاله پایین — InputBar را از بالا روشن می‌کنه */
+.al-halo--bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(
+    0deg,
+    rgba(80, 40, 180, 0.07) 0%,
+    rgba(60, 30, 140, 0.035) 40%,
+    transparent 100%
+  );
+  filter: blur(2px);
+  animation: haloBreath 20s ease-in-out infinite;
+  animation-delay: -12s;
+}
+
+/* هاله راست — ناحیه چت */
+.al-halo--right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 200px;
+  background: linear-gradient(
+    270deg,
+    rgba(60, 40, 160, 0.05) 0%,
+    transparent 100%
+  );
+  filter: blur(4px);
+  animation: haloBreath 30s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+@keyframes haloBreath {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1.0; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CENTER VOLUMETRIC BLOOM
+   نور حجمی مرکزی — بسیار subtile، فقط برای depth
+   ══════════════════════════════════════════════════════════════ */
+.al-bloom {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70vw;
+  height: 60vh;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(90, 45, 180, 0.04) 0%,
+    rgba(60, 30, 140, 0.02) 40%,
+    transparent 70%
+  );
+  filter: blur(40px);
+  animation: bloomShift 40s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes bloomShift {
+  0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(1);    }
+  50%  { opacity: 1.0; transform: translate(-50%, -52%) scale(1.08); }
+  100% { opacity: 0.7; transform: translate(-50%, -48%) scale(0.95); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCAN LINE
+   خط افقی بسیار ظریف که آرام جابجا می‌شه —
+   حس sci-fi control room می‌ده
+   ══════════════════════════════════════════════════════════════ */
+.al-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(140, 80, 255, 0.06) 20%,
+    rgba(160, 100, 255, 0.12) 50%,
+    rgba(140, 80, 255, 0.06) 80%,
+    transparent 100%
+  );
+  animation: scanMove 18s ease-in-out infinite;
+  filter: blur(0.5px);
+  will-change: top;
+}
+
+@keyframes scanMove {
+  0%   { top: 15%; opacity: 0;   }
+  8%   { opacity: 1;             }
+  92%  { opacity: 1;             }
+  100% { top: 85%; opacity: 0;   }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOUSE PROXIMITY GLOW
+   دو لایه با سرعت‌های lerp مختلف → حس عمق
+   ══════════════════════════════════════════════════════════════ */
+
+/* لایه سریع — شعاع کوچک، واکنش تند */
+.al-proximity--fast {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(140, 80, 255, 0.055) 0%,
+    rgba(120, 60, 220, 0.025) 35%,
+    transparent 65%
+  );
+  filter: blur(50px);
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+
+/* لایه کُند — شعاع بزرگ، واکنش آهسته = depth */
+.al-proximity--slow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1000px;
+  height: 1000px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(80, 50, 180, 0.035) 0%,
+    rgba(60, 35, 140, 0.015) 40%,
+    transparent 65%
+  );
+  filter: blur(80px);
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HORIZONTAL LIGHT BAND
+   نوار افقی کم‌رنگ که مثل reflection یه سطح شیشه‌ای
+   در میانه صفحه قرار داره
+   ══════════════════════════════════════════════════════════════ */
+.al-band {
+  position: absolute;
+  top: 42%;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(100, 55, 200, 0.025) 40%,
+    rgba(100, 55, 200, 0.035) 50%,
+    rgba(100, 55, 200, 0.025) 60%,
+    transparent 100%
+  );
+  filter: blur(8px);
+  animation: bandDrift 35s ease-in-out infinite alternate;
+  will-change: top, opacity;
+}
+
+@keyframes bandDrift {
+  0%   { top: 38%; opacity: 0.6; }
+  50%  { top: 45%; opacity: 1.0; }
+  100% { top: 40%; opacity: 0.7; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PANEL EDGE ILLUMINATION UTILITIES
+   این کلاس‌ها مستقیم روی کامپوننت‌های موجود اضافه می‌شن
+   بدون نیاز به wrapper جدید.
+
+   مثال در MainLayout.js:
+     <div className="panel-header al-edge-top"> ... </div>
+     <div className="panel-sidebar al-edge-left"> ... </div>
+     <div className="panel-footer al-edge-bottom"> ... </div>
+   ══════════════════════════════════════════════════════════════ */
+
+/* لبه نورانی بالای پنل */
+.al-edge-top::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(140, 80, 255, 0.20) 30%,
+    rgba(160, 100, 255, 0.30) 50%,
+    rgba(140, 80, 255, 0.20) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* لبه نورانی پایین پنل */
+.al-edge-bottom::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(120, 70, 220, 0.15) 30%,
+    rgba(140, 85, 240, 0.22) 50%,
+    rgba(120, 70, 220, 0.15) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* لبه نورانی راست پنل (sidebar) */
+.al-edge-right::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  right: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(140, 80, 255, 0.15) 30%,
+    rgba(160, 100, 255, 0.25) 50%,
+    rgba(140, 80, 255, 0.15) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* لبه نورانی چپ پنل */
+.al-edge-left::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(140, 80, 255, 0.12) 30%,
+    rgba(160, 100, 255, 0.20) 50%,
+    rgba(140, 80, 255, 0.12) 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HOVER GLOW UTILITIES
+   روی هر المانی قابل استفاده‌ست.
+
+   مثال:
+     <div className="al-hover-purple"> ... </div>
+     <button className="al-hover-cyan btn-primary"> ... </button>
+   ══════════════════════════════════════════════════════════════ */
+
+.al-hover-purple {
+  transition: box-shadow 0.35s ease;
+}
+.al-hover-purple:hover {
+  box-shadow:
+    0 0 20px rgba(140, 80, 255, 0.12),
+    0 0 60px rgba(120, 60, 220, 0.06);
+}
+
+.al-hover-blue {
+  transition: box-shadow 0.35s ease;
+}
+.al-hover-blue:hover {
+  box-shadow:
+    0 0 20px rgba(80, 100, 240, 0.12),
+    0 0 60px rgba(60, 80, 200, 0.06);
+}
+
+.al-hover-cyan {
+  transition: box-shadow 0.35s ease;
+}
+.al-hover-cyan:hover {
+  box-shadow:
+    0 0 20px rgba(34, 211, 238, 0.10),
+    0 0 60px rgba(20, 180, 210, 0.05);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .al-corner,
+  .al-halo,
+  .al-bloom,
+  .al-scanline,
+  .al-band {
+    animation: none;
+  }
+}

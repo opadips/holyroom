@@ -7,6 +7,7 @@ import MainLayout from './components/MainLayout';
 import SettingsPanel from './components/SettingsPanel';
 import NotificationBar from './components/NotificationBar';
 import AtmosphericBackground from './components/AtmosphericBackground';
+import AmbientLight from './components/AmbientLight';
 import {
   PageTransition,
   ModalMotion,
@@ -161,6 +162,9 @@ export default function App() {
     <>
       {/* ── Cinematic background — always present on all pages ── */}
       <AtmosphericBackground />
+
+      {/* ── UI-level ambient lighting — sits between bg and UI ── */}
+      <AmbientLight />
 
       {/* ── Page transition: Login ↔ Main ──────────────────────
           AnimatePresence mode="wait" ensures exit animation
