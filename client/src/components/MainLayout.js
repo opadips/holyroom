@@ -31,14 +31,20 @@ export default function MainLayout({
   onFullscreen,
 }) {
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-black elegant-bg text-white">
+    <div className="h-screen flex flex-col overflow-hidden holy-bg text-white relative">
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 left-0 w-1/3 h-1/3 bg-purple-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-blue-900/10 rounded-full blur-3xl" />
+      </div>
+      <div className="particles" />
+
       <Header
         currentUser={currentUser}
         usersCount={usersCount}
         onSettingsClick={onSettingsClick}
         onLeave={onLeave}
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative z-10">
         <Sidebar
           otherUsers={otherUsers}
           connectionStatuses={connectionStatuses}

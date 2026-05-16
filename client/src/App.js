@@ -7,11 +7,13 @@ import SettingsPanel from './components/SettingsPanel';
 import NotificationBar from './components/NotificationBar';
 
 const SOCKET_URL = `${window.location.protocol}//${window.location.hostname}:3001`;
-const QUALITY_PRESETS = {
-  high: { width: 3840, height: 2160, fps: 60, label: '4K 60fps' },
-  medium: { width: 1920, height: 1080, fps: 30, label: '1080p 30fps' },
-  low: { width: 1280, height: 720, fps: 15, label: '720p 15fps' },
-};
+
+const PRESET_OPTIONS = [
+  { key: 'high', width: 3840, height: 2160, fps: 60, label: '4K 60fps' },
+  { key: 'medium', width: 1920, height: 1080, fps: 30, label: '1080p 30fps' },
+  { key: 'low', width: 1280, height: 720, fps: 15, label: '720p 15fps' },
+  { key: 'custom', width: 1920, height: 1080, fps: 30, label: 'Custom' },
+];
 
 export default function App() {
   const [username, setUsername] = useState('');
@@ -22,14 +24,20 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [input, setInput] = useState('');
   const [notification, setNotification] = useState('');
-  const [theme, setTheme] = useState('elegant');
-  const [quality, setQuality] = useState('high');
+  const [qualityPreset, setQualityPreset] = useState('high');
+  const [customQuality, setCustomQuality] = useState({ width: 1920, height: 1080, fps: 30 });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [fullscreenVideo, setFullscreenVideo] = useState(null);
   const [connectionStatuses, setConnectionStatuses] = useState({});
   const socketRef = useRef(null);
   const ownVideoRef = useRef(null);
   const videoRefs = useRef(new Map());
+
+  // Effective quality object
+  const effectiveQuality =
+    qualityPreset === 'custom'
+      ? { ...customQuality, label: 'Custom' }
+      : PRESET_OPTIONS.find((p) => p.key === qualityPreset) || PRESET_OPTIONS[0];
 
   const {
     activeSharers,
@@ -55,7 +63,7 @@ export default function App() {
     setLocalStreamManually,
     setSharingState,
     reset,
-  } = useWebRTC(socketRef, quality);
+  } = useWebRTC(socketRef, effectiveQuality);
 
   useEffect(() => {
     if (!joined) return;
@@ -116,7 +124,7 @@ export default function App() {
       await startVoiceCapture();
       setCurrentUser(clean);
       setJoined(true);
-    } catch (err) {
+    } catch {
       setNotification('Could not access microphone. You can still join, but voice will not work.');
       setCurrentUser(clean);
       setJoined(true);
@@ -136,13 +144,13 @@ export default function App() {
 
   const startSharingWithQuality = async () => {
     if (!socketRef.current) return;
-    const preset = QUALITY_PRESETS[quality];
+    const q = effectiveQuality;
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          width: { ideal: preset.width },
-          height: { ideal: preset.height },
-          frameRate: { ideal: preset.fps },
+          width: { ideal: q.width },
+          height: { ideal: q.height },
+          frameRate: { ideal: q.fps },
           cursor: 'always',
         },
         audio: true,
@@ -204,10 +212,10 @@ export default function App() {
       />
       {settingsOpen && (
         <SettingsPanel
-          theme={theme}
-          setTheme={setTheme}
-          quality={quality}
-          setQuality={setQuality}
+          qualityPreset={qualityPreset}
+          setQualityPreset={setQualityPreset}
+          customQuality={customQuality}
+          setCustomQuality={setCustomQuality}
           onClose={() => setSettingsOpen(false)}
         />
       )}
