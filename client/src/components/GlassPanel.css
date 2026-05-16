@@ -1,0 +1,480 @@
+/* ═══════════════════════════════════════════════════════════════════
+   GlassPanel.css — Premium Glassmorphism System
+   Holyroom — Dark Futuristic Interface
+   ═══════════════════════════════════════════════════════════════════
+
+   Layer stack inside each panel (back → front):
+   1. glass-panel          — backdrop-filter blur + dark translucent bg
+   2. __reflection         — top-edge soft gradient (light diffusion)
+   3. __shimmer            — animated diagonal sweep on hover
+   4. __noise              — SVG fractal noise texture
+   5. __edge-glow          — mouse-reactive radial border highlight
+   6. __content            — actual children content
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── CSS custom properties (local overrides per variant) ─────────── */
+.glass-panel {
+  /* Mouse position for reactive glow — set by JS */
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+
+  /* Glow color tokens — overridden per glow variant */
+  --glow-color: rgba(168, 85, 247, 0);
+  --glow-border: rgba(168, 85, 247, 0);
+  --glow-soft:   rgba(168, 85, 247, 0);
+
+  /* Geometry */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  /* Surface */
+  background: var(--gp-bg, rgba(8, 8, 18, 0.55));
+  backdrop-filter: blur(var(--gp-blur, 22px)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--gp-blur, 22px)) saturate(140%);
+
+  /* Border */
+  border: 1px solid var(--gp-border, rgba(255, 255, 255, 0.055));
+  border-radius: var(--gp-radius, 1.25rem);
+
+  /* Shadow system — 3 layers */
+  box-shadow:
+    /* 1. depth shadow — makes panel "float" above background */
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    /* 2. mid ambient */
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    /* 3. inner top highlight — simulates light hitting top surface */
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    /* 4. inner bottom depth */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+
+  /* Motion */
+  transition:
+    box-shadow 0.4s ease,
+    border-color 0.4s ease,
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.4s ease;
+
+  will-change: transform, box-shadow;
+}
+
+/* ── Hover state — lift + glow intensify ────────────────────────── */
+.glass-panel:hover {
+  transform: translateY(-2px);
+  border-color: var(--gp-hover-border, rgba(255, 255, 255, 0.10));
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 40px var(--glow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* ── Active / pressed state ─────────────────────────────────────── */
+.glass-panel--active,
+.glass-panel:active {
+  transform: translateY(0px) scale(0.995);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 2px 8px rgba(0, 0, 0, 0.25);
+  border-color: var(--glow-border);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   VARIANTS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── default — floating card ────────────────────────────────────── */
+.glass-panel--default {
+  --gp-bg:           rgba(8, 8, 18, 0.55);
+  --gp-blur:         22px;
+  --gp-border:       rgba(255, 255, 255, 0.055);
+  --gp-hover-border: rgba(255, 255, 255, 0.10);
+  --gp-radius:       1.25rem;
+}
+
+/* ── card — prominent standalone card ──────────────────────────── */
+.glass-panel--card {
+  --gp-bg:           rgba(10, 10, 22, 0.60);
+  --gp-blur:         28px;
+  --gp-border:       rgba(168, 85, 247, 0.10);
+  --gp-hover-border: rgba(168, 85, 247, 0.22);
+  --gp-radius:       1.5rem;
+}
+
+/* ── sidebar — full-height edge panel ──────────────────────────── */
+.glass-panel--sidebar {
+  --gp-bg:           rgba(6, 6, 16, 0.65);
+  --gp-blur:         32px;
+  --gp-border:       rgba(168, 85, 247, 0.07);
+  --gp-hover-border: rgba(168, 85, 247, 0.07); /* no hover change — static panel */
+  --gp-radius:       0;
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+  /* right border only */
+  border-right: 1px solid rgba(168, 85, 247, 0.08);
+  box-shadow:
+    4px 0 40px rgba(0, 0, 0, 0.4),
+    inset -1px 0 0 rgba(255, 255, 255, 0.03);
+  transform: none !important; /* sidebar should never lift */
+}
+.glass-panel--sidebar:hover {
+  transform: none !important;
+}
+
+/* ── header — top bar ───────────────────────────────────────────── */
+.glass-panel--header {
+  --gp-bg:           rgba(6, 6, 16, 0.70);
+  --gp-blur:         28px;
+  --gp-border:       rgba(168, 85, 247, 0.07);
+  --gp-radius:       0;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.08);
+  box-shadow:
+    0 4px 32px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  transform: none !important;
+}
+.glass-panel--header:hover {
+  transform: none !important;
+}
+
+/* ── footer / input bar ─────────────────────────────────────────── */
+.glass-panel--footer {
+  --gp-bg:           rgba(6, 6, 16, 0.70);
+  --gp-blur:         28px;
+  --gp-radius:       0;
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+  border-top: 1px solid rgba(168, 85, 247, 0.07);
+  box-shadow:
+    0 -4px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transform: none !important;
+}
+.glass-panel--footer:hover {
+  transform: none !important;
+}
+
+/* ── modal — prominent overlay panel ───────────────────────────── */
+.glass-panel--modal {
+  --gp-bg:           rgba(10, 8, 24, 0.75);
+  --gp-blur:         40px;
+  --gp-border:       rgba(168, 85, 247, 0.15);
+  --gp-hover-border: rgba(168, 85, 247, 0.25);
+  --gp-radius:       1.75rem;
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.7),
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(100, 50, 200, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ── inset — sunken / inner panel ──────────────────────────────── */
+.glass-panel--inset {
+  --gp-bg:           rgba(0, 0, 8, 0.45);
+  --gp-blur:         12px;
+  --gp-border:       rgba(255, 255, 255, 0.04);
+  --gp-hover-border: rgba(255, 255, 255, 0.07);
+  --gp-radius:       0.875rem;
+  box-shadow:
+    inset 0 2px 12px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.03);
+  transform: none !important;
+}
+.glass-panel--inset:hover {
+  transform: none !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   GLOW VARIANTS — edge ambient lighting
+   ══════════════════════════════════════════════════════════════════ */
+
+.glass-panel--glow-purple {
+  --glow-color:  rgba(139, 92, 246, 0.18);
+  --glow-border: rgba(139, 92, 246, 0.35);
+  --glow-soft:   rgba(139, 92, 246, 0.08);
+}
+.glass-panel--glow-purple:hover {
+  border-color: rgba(139, 92, 246, 0.28);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(139, 92, 246, 0.10),
+    0 0 120px rgba(139, 92, 246, 0.04),
+    inset 0 1px 0 rgba(168, 85, 247, 0.10),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel--glow-cyan {
+  --glow-color:  rgba(34, 211, 238, 0.14);
+  --glow-border: rgba(34, 211, 238, 0.30);
+  --glow-soft:   rgba(34, 211, 238, 0.06);
+}
+.glass-panel--glow-cyan:hover {
+  border-color: rgba(34, 211, 238, 0.22);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(34, 211, 238, 0.08),
+    0 0 100px rgba(34, 211, 238, 0.03),
+    inset 0 1px 0 rgba(34, 211, 238, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel--glow-blue {
+  --glow-color:  rgba(99, 102, 241, 0.18);
+  --glow-border: rgba(99, 102, 241, 0.32);
+  --glow-soft:   rgba(99, 102, 241, 0.07);
+}
+.glass-panel--glow-blue:hover {
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 12px 32px rgba(0, 0, 0, 0.4),
+    0 0 50px rgba(99, 102, 241, 0.09),
+    inset 0 1px 0 rgba(99, 102, 241, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   INNER LAYERS
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Reflection — top surface light diffusion ───────────────────── */
+.glass-panel__reflection {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  /* Simulates light hitting the top edge of the glass */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.032) 0%,
+    rgba(255, 255, 255, 0.008) 18%,
+    transparent 40%
+  );
+  /* Faint left-edge catch light */
+  border-left: 1px solid rgba(255, 255, 255, 0.025);
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+  /* offset so it doesn't overlap actual border */
+  margin: 1px;
+  border-radius: calc(var(--gp-radius, 1.25rem) - 1px);
+}
+
+/* ── Shimmer — animated diagonal sweep ──────────────────────────── */
+.glass-panel__shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.glass-panel__shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.028) 40%,
+    rgba(255, 255, 255, 0.055) 50%,
+    rgba(255, 255, 255, 0.028) 60%,
+    transparent 80%
+  );
+  transform: skewX(-15deg);
+  transition: left 0s;
+}
+.glass-panel--shimmer:hover .glass-panel__shimmer::after {
+  left: 180%;
+  transition: left 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* ── Noise texture — subtle grain overlay ───────────────────────── */
+.glass-panel__noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: inherit;
+  opacity: 0.28;
+  /* SVG fractal noise — inline so no extra HTTP request */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+}
+
+/* ── Edge glow — mouse-reactive radial border ───────────────────── */
+.glass-panel__edge-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  /* Follows --mouse-x / --mouse-y set by JS */
+  background: radial-gradient(
+    280px circle at var(--mouse-x) var(--mouse-y),
+    var(--glow-color),
+    transparent 70%
+  );
+}
+.glass-panel:hover .glass-panel__edge-glow {
+  opacity: 1;
+}
+
+/* ── Content wrapper — always on top ────────────────────────────── */
+.glass-panel__content {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   FLOAT ANIMATION
+   ══════════════════════════════════════════════════════════════════ */
+.glass-panel--float {
+  animation: glassPanelFloat 7s ease-in-out infinite;
+}
+.glass-panel--float:hover {
+  animation-play-state: paused;
+}
+
+@keyframes glassPanelFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-5px); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   Add these directly to any element — no component wrapper needed.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Quick glass surface without JS interactivity */
+.glass-surface {
+  background: rgba(8, 8, 18, 0.52);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  box-shadow:
+    0 20px 56px rgba(0, 0, 0, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Divider inside panels */
+.glass-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(168, 85, 247, 0.12) 30%,
+    rgba(168, 85, 247, 0.18) 50%,
+    rgba(168, 85, 247, 0.12) 70%,
+    transparent
+  );
+  margin: 0.5rem 0;
+}
+
+/* Pill / badge */
+.glass-badge {
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.22);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(200, 170, 255, 0.9);
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Cyan variant badge */
+.glass-badge--cyan {
+  background: rgba(34, 211, 238, 0.10);
+  border-color: rgba(34, 211, 238, 0.22);
+  color: rgba(100, 230, 248, 0.9);
+}
+
+/* Icon button (small circular glass) */
+.glass-icon-btn {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.625rem;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.glass-icon-btn:hover {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.25);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transform: translateY(-1px);
+}
+.glass-icon-btn:active {
+  transform: translateY(0) scale(0.96);
+  background: rgba(168, 85, 247, 0.08);
+}
+
+/* Tooltip / popover surface */
+.glass-tooltip {
+  background: rgba(12, 10, 28, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  border-radius: 0.625rem;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8rem;
+  color: rgba(220, 210, 255, 0.9);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   SCROLLBAR inside glass panels
+   ══════════════════════════════════════════════════════════════════ */
+.glass-panel ::-webkit-scrollbar { width: 4px; }
+.glass-panel ::-webkit-scrollbar-track { background: transparent; }
+.glass-panel ::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.18);
+  border-radius: 2px;
+}
+.glass-panel ::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.32);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   ══════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .glass-panel,
+  .glass-panel--float,
+  .glass-panel__shimmer::after {
+    animation: none;
+    transition: none;
+  }
+}

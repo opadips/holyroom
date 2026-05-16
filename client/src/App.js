@@ -5,6 +5,7 @@ import LoginPage from './components/LoginPage';
 import MainLayout from './components/MainLayout';
 import SettingsPanel from './components/SettingsPanel';
 import NotificationBar from './components/NotificationBar';
+import AtmosphericBackground from './components/AtmosphericBackground';
 
 const SOCKET_URL = `${window.location.protocol}//${window.location.hostname}:3001`;
 
@@ -33,7 +34,6 @@ export default function App() {
   const ownVideoRef = useRef(null);
   const videoRefs = useRef(new Map());
 
-  // Effective quality object
   const effectiveQuality =
     qualityPreset === 'custom'
       ? { ...customQuality, label: 'Custom' }
@@ -168,17 +168,24 @@ export default function App() {
 
   if (!joined) {
     return (
-      <LoginPage
-        username={username}
-        setUsername={setUsername}
-        joining={joining}
-        handleJoin={handleJoin}
-      />
+      <>
+        {/* پس‌زمینه سینماتیک — روی هر دو صفحه Login و Main نمایش داده می‌شه */}
+        <AtmosphericBackground />
+        <LoginPage
+          username={username}
+          setUsername={setUsername}
+          joining={joining}
+          handleJoin={handleJoin}
+        />
+      </>
     );
   }
 
   return (
     <>
+      {/* پس‌زمینه سینماتیک — fixed است و زیر همه لایه‌ها قرار می‌گیره */}
+      <AtmosphericBackground />
+
       <MainLayout
         currentUser={currentUser}
         usersCount={users.length}
@@ -210,6 +217,7 @@ export default function App() {
         socketId={socketRef.current?.id}
         onFullscreen={setFullscreenVideo}
       />
+
       {settingsOpen && (
         <SettingsPanel
           qualityPreset={qualityPreset}
@@ -219,11 +227,24 @@ export default function App() {
           onClose={() => setSettingsOpen(false)}
         />
       )}
+
       <NotificationBar message={notification} onClose={() => setNotification('')} />
+
       {fullscreenVideo && (
-        <div className="fixed inset-0 z-50 bg-black flex items-center justify-center" onClick={() => setFullscreenVideo(null)}>
-          <video ref={el => el && (el.srcObject = fullscreenVideo)} autoPlay playsInline className="max-w-full max-h-full" />
-          <button className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2" onClick={() => setFullscreenVideo(null)}>
+        <div
+          className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+          onClick={() => setFullscreenVideo(null)}
+        >
+          <video
+            ref={(el) => el && (el.srcObject = fullscreenVideo)}
+            autoPlay
+            playsInline
+            className="max-w-full max-h-full"
+          />
+          <button
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2"
+            onClick={() => setFullscreenVideo(null)}
+          >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
