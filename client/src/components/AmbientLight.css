@@ -252,13 +252,13 @@
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(140, 80, 255, 0.055) 0%,
-    rgba(120, 60, 220, 0.025) 35%,
+    rgba(140, 80, 255, 0.04) 0%,
+    rgba(120, 60, 220, 0.015) 40%,
     transparent 65%
   );
-  filter: blur(50px);
+  filter: blur(60px);
   will-change: transform;
-  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 /* لایه کُند — شعاع بزرگ، واکنش آهسته = depth */
@@ -271,13 +271,13 @@
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(80, 50, 180, 0.035) 0%,
-    rgba(60, 35, 140, 0.015) 40%,
+    rgba(80, 50, 180, 0.025) 0%,
+    rgba(60, 35, 140, 0.010) 45%,
     transparent 65%
   );
-  filter: blur(80px);
+  filter: blur(90px);
   will-change: transform;
-  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 /* ══════════════════════════════════════════════════════════════

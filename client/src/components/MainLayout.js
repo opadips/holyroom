@@ -1,9 +1,9 @@
 import React from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import ScreenShareBar from './ScreenShareBar';
 import ChatArea from './ChatArea';
 import InputBar from './InputBar';
+import ScreenShareBar from './ScreenShareBar';
 
 export default function MainLayout({
   currentUser,
@@ -29,14 +29,13 @@ export default function MainLayout({
   videoRefs,
   socketId,
   onFullscreen,
+  onOwnFullscreen,
+  speakingUsers = [],
+  audioStreams = new Map(),
+  typingUsers = [],
 }) {
   return (
-    <div className="h-screen flex flex-col overflow-hidden holy-bg text-white relative">
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-1/3 h-1/3 bg-purple-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-blue-900/10 rounded-full blur-3xl" />
-      </div>
-      <div className="particles" />
+    <div className="flex flex-col h-screen relative z-10 overflow-hidden">
 
       <Header
         currentUser={currentUser}
@@ -44,7 +43,9 @@ export default function MainLayout({
         onSettingsClick={onSettingsClick}
         onLeave={onLeave}
       />
-      <div className="flex flex-1 overflow-hidden relative z-10">
+
+      <div className="flex flex-1 overflow-hidden">
+
         <Sidebar
           otherUsers={otherUsers}
           connectionStatuses={connectionStatuses}
@@ -53,19 +54,30 @@ export default function MainLayout({
           onViewShare={onViewShare}
           onStartShare={onStartShare}
           onStopShare={onStopShare}
+          speakingUsers={speakingUsers}
+          audioStreams={audioStreams}
         />
-        <main className="flex-1 flex flex-col">
+
+        <main className="flex flex-col flex-1 overflow-hidden">
+
           <ScreenShareBar
             activeSharers={activeSharers}
-            isSharing={isSharing}
-            localStream={localStream}
             remoteStreams={remoteStreams}
-            ownVideoRef={ownVideoRef}
+            localStream={localStream}
+            isSharing={isSharing}
+            currentUser={currentUser}
             videoRefs={videoRefs}
+            ownVideoRef={ownVideoRef}
             socketId={socketId}
             onFullscreen={onFullscreen}
+            onOwnFullscreen={onOwnFullscreen}
           />
-          <ChatArea messages={messages} />
+
+          <ChatArea
+            messages={messages}
+            typingUsers={typingUsers}
+          />
+
           <InputBar
             input={input}
             setInput={setInput}
@@ -73,6 +85,7 @@ export default function MainLayout({
             onToggleMute={onToggleMute}
             onSend={onSend}
           />
+
         </main>
       </div>
     </div>

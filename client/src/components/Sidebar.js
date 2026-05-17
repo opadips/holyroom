@@ -1,7 +1,8 @@
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { StaggerList, StaggerItem, UserJoinMotion } from './MotionWrapper';
-import { PulseAvatar, VoiceBar, StreamToggleButton } from './MicroComponents';
+import { VoiceBar, StreamToggleButton } from './MicroComponents';
+import { AudioReactiveRing } from './AudioReactiveRing';
 
 const USER_COLORS = [
   '#7c3aed', '#6366f1', '#2563eb', '#0891b2', '#7c3aed',
@@ -11,6 +12,27 @@ function getUserColor(name) {
   let h = 0;
   for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
   return USER_COLORS[h % USER_COLORS.length];
+}
+
+function Avatar({ name, color, size = 30 }) {
+  return (
+    <div style={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      background: color,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '0.72rem',
+      fontWeight: 700,
+      color: 'white',
+      flexShrink: 0,
+      userSelect: 'none',
+    }}>
+      {name?.[0]?.toUpperCase()}
+    </div>
+  );
 }
 
 export default function Sidebar({
@@ -42,21 +64,26 @@ export default function Sidebar({
                 <UserJoinMotion key={u.id}>
                   <StaggerItem>
                     <div className="flex items-center gap-3 py-1.5 px-1 rounded-lg hover:bg-white/[0.03] transition-colors duration-200">
-                      <PulseAvatar
-                        username={u.name}
-                        color={color}
-                        isSpeaking={isSpeaking}
-                        size={30}
-                      />
+
+                      <AudioReactiveRing
+                        stream={stream}
+                        size={34}
+                        enabled={isSpeaking && !!stream}
+                      >
+                        <Avatar name={u.name} color={color} size={30} />
+                      </AudioReactiveRing>
+
                       <div className="flex-1 min-w-0">
                         <span className="ty-sidebar-user ty-truncate block">{u.name}</span>
                         {status === 'connecting' && (
                           <span className="ty-sidebar-status ty-accent--danger">connecting…</span>
                         )}
                       </div>
+
                       {stream && (
                         <VoiceBar stream={stream} isMuted={false} barCount={4} />
                       )}
+
                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         status === 'connected'
                           ? 'bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.5)]'

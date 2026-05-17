@@ -1,0 +1,337 @@
+/* ═══════════════════════════════════════════════════════════════
+   CinematicFocus.css
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root ───────────────────────────────────────────────────── */
+.cf-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  perspective: 1400px;
+}
+
+/* ── Backdrop ───────────────────────────────────────────────── */
+.cf-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 8, 0.92);
+  backdrop-filter: blur(2px);
+}
+
+/* ── Depth fog ──────────────────────────────────────────────── */
+.cf-depth-fog {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%,
+      rgba(60, 20, 120, 0.12) 0%,
+      transparent 65%),
+    radial-gradient(ellipse 100% 100% at 50% 100%,
+      rgba(0, 0, 20, 0.6) 0%,
+      transparent 60%);
+  pointer-events: none;
+}
+
+/* ── Lens vignette ──────────────────────────────────────────── */
+.cf-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    transparent 45%,
+    rgba(0, 0, 8, 0.55) 75%,
+    rgba(0, 0, 5, 0.88) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Stage — the video wrapper ──────────────────────────────── */
+.cf-stage {
+  position: relative;
+  width: min(88vw, 1400px);
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  z-index: 10;
+  cursor: default;
+
+  background: #000;
+  box-shadow:
+    0 0   0 1px rgba(139, 92, 246, 0.12),
+    0 40px 120px rgba(0, 0, 0, 0.9),
+    0 0   80px rgba(80, 30, 160, 0.12),
+    0 0  160px rgba(60, 20, 120, 0.06);
+}
+
+/* ── Video ──────────────────────────────────────────────────── */
+.cf-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: inherit;
+}
+
+/* ── Mouse-reactive border glow ────────────────────────────── */
+.cf-border-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+  opacity: 0.9;
+}
+
+/* ── Edge shimmer lines ─────────────────────────────────────── */
+.cf-edge-top,
+.cf-edge-bottom,
+.cf-edge-left,
+.cf-edge-right {
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.cf-edge-top {
+  top: 0; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(139, 92, 246, 0.35) 30%,
+    rgba(168, 120, 255, 0.55) 50%,
+    rgba(139, 92, 246, 0.35) 70%,
+    transparent
+  );
+  animation: edgePulse 4s ease-in-out infinite;
+}
+
+.cf-edge-bottom {
+  bottom: 0; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(99, 102, 241, 0.20) 30%,
+    rgba(120, 130, 255, 0.32) 50%,
+    rgba(99, 102, 241, 0.20) 70%,
+    transparent
+  );
+  animation: edgePulse 4s ease-in-out infinite reverse;
+  animation-delay: -2s;
+}
+
+.cf-edge-left {
+  left: 0; top: 8%; bottom: 8%; width: 1px;
+  background: linear-gradient(180deg,
+    transparent,
+    rgba(139, 92, 246, 0.22) 40%,
+    rgba(139, 92, 246, 0.22) 60%,
+    transparent
+  );
+}
+
+.cf-edge-right {
+  right: 0; top: 8%; bottom: 8%; width: 1px;
+  background: linear-gradient(180deg,
+    transparent,
+    rgba(139, 92, 246, 0.22) 40%,
+    rgba(139, 92, 246, 0.22) 60%,
+    transparent
+  );
+}
+
+@keyframes edgePulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1.0; }
+}
+
+/* ── Scan line ──────────────────────────────────────────────── */
+.cf-scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(139, 92, 246, 0.08) 25%,
+    rgba(168, 120, 255, 0.14) 50%,
+    rgba(139, 92, 246, 0.08) 75%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 3;
+  animation: scanMove 9s ease-in-out infinite;
+}
+
+@keyframes scanMove {
+  0%   { top: 5%;  opacity: 0;   }
+  6%   { opacity: 1;             }
+  94%  { opacity: 1;             }
+  100% { top: 95%; opacity: 0;   }
+}
+
+/* ── Corner brackets (HUD frame) ────────────────────────────── */
+.cf-bracket {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0.55;
+}
+
+.cf-bracket--tl {
+  top: 12px; left: 12px;
+  border-top: 1.5px solid rgba(168, 120, 255, 0.7);
+  border-left: 1.5px solid rgba(168, 120, 255, 0.7);
+}
+.cf-bracket--tr {
+  top: 12px; right: 12px;
+  border-top: 1.5px solid rgba(168, 120, 255, 0.7);
+  border-right: 1.5px solid rgba(168, 120, 255, 0.7);
+}
+.cf-bracket--bl {
+  bottom: 12px; left: 12px;
+  border-bottom: 1.5px solid rgba(168, 120, 255, 0.7);
+  border-left: 1.5px solid rgba(168, 120, 255, 0.7);
+}
+.cf-bracket--br {
+  bottom: 12px; right: 12px;
+  border-bottom: 1.5px solid rgba(168, 120, 255, 0.7);
+  border-right: 1.5px solid rgba(168, 120, 255, 0.7);
+}
+
+/* ── HUD overlay ────────────────────────────────────────────── */
+.cf-hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 5;
+  background: linear-gradient(0deg,
+    rgba(0, 0, 10, 0.75) 0%,
+    rgba(0, 0, 10, 0.30) 60%,
+    transparent 100%
+  );
+}
+
+.cf-hud__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cf-hud__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  animation: liveDot 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes liveDot {
+  0%, 100% { opacity: 1;   box-shadow: 0 0 8px  rgba(239, 68, 68, 0.8); }
+  50%       { opacity: 0.5; box-shadow: 0 0 14px rgba(239, 68, 68, 0.5); }
+}
+
+.cf-hud__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+}
+
+.cf-hud__name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(220, 210, 255, 0.85);
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cf-hud__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cf-hud__close {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(200, 200, 220, 0.7);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-family: 'Inter Tight', 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.cf-hud__close:hover {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(168, 120, 255, 0.30);
+  color: rgba(220, 210, 255, 0.9);
+}
+
+/* ── Lens flare ─────────────────────────────────────────────── */
+.cf-lens-flare {
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.04) 0%,
+    transparent 60%
+  );
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: 2;
+  animation: flarePulse 8s ease-in-out infinite;
+}
+
+@keyframes flarePulse {
+  0%, 100% { opacity: 0.5; transform: scale(1);    }
+  50%       { opacity: 1.0; transform: scale(1.15); }
+}
+
+/* ── Recession tiles ────────────────────────────────────────── */
+.cf-recession-tile {
+  position: fixed;
+  border-radius: 10px;
+  background: rgba(8, 8, 20, 0.45);
+  border: 1px solid rgba(139, 92, 246, 0.06);
+  backdrop-filter: blur(0px);
+  pointer-events: none;
+  z-index: 5;
+  transform-origin: center center;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .cf-scanline,
+  .cf-edge-top,
+  .cf-edge-bottom,
+  .cf-hud__dot,
+  .cf-lens-flare {
+    animation: none;
+  }
+}

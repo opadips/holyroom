@@ -8,12 +8,8 @@ import SettingsPanel from './components/SettingsPanel';
 import NotificationBar from './components/NotificationBar';
 import AtmosphericBackground from './components/AtmosphericBackground';
 import AmbientLight from './components/AmbientLight';
-import {
-  PageTransition,
-  ModalMotion,
-  NotificationMotion,
-  FullscreenMotion,
-} from './components/MotionWrapper';
+import CinematicFocus from './components/CinematicFocus';
+import { PageTransition, ModalMotion } from './components/MotionWrapper';
 
 const SOCKET_URL = `${window.location.protocol}//${window.location.hostname}:3001`;
 
@@ -36,8 +32,10 @@ export default function App() {
   const [qualityPreset, setQualityPreset]     = useState('high');
   const [customQuality, setCustomQuality]     = useState({ width: 1920, height: 1080, fps: 30 });
   const [settingsOpen, setSettingsOpen]       = useState(false);
-  const [fullscreenVideo, setFullscreenVideo] = useState(null);
   const [connectionStatuses, setConnectionStatuses] = useState({});
+  const [focusedStream, setFocusedStream]     = useState(null);
+  const [focusedSharer, setFocusedSharer]     = useState('');
+
   const socketRef   = useRef(null);
   const ownVideoRef = useRef(null);
   const videoRefs   = useRef(new Map());
@@ -74,6 +72,10 @@ export default function App() {
     socket.on('userStoppedSharing', (sharer) => {
       handleUserStoppedSharing(sharer);
       setNotification(`${sharer.name} stopped sharing`);
+      setFocusedStream((prev) => {
+        if (prev && remoteStreams.get(sharer.id) === prev) return null;
+        return prev;
+      });
     });
     socket.on('newViewer',               ({ viewerId, viewerName }) => handleNewViewer(viewerId, viewerName));
     socket.on('webrtcOffer',             ({ from, offer })          => handleOffer(from, offer));
@@ -132,6 +134,8 @@ export default function App() {
     setUsername('');
     setMessages([]);
     setUsers([]);
+    setFocusedStream(null);
+    setFocusedSharer('');
   };
 
   const startSharingWithQuality = async () => {
@@ -156,20 +160,27 @@ export default function App() {
     }
   };
 
+  const handleOpenFocus = (sharerId) => {
+    const stream = remoteStreams.get(sharerId);
+    const sharer = activeSharers.find((s) => s.id === sharerId);
+    if (!stream) return;
+    setFocusedStream(stream);
+    setFocusedSharer(sharer?.name ?? '');
+  };
+
+  const handleOpenOwnFocus = () => {
+    if (!localStream) return;
+    setFocusedStream(localStream);
+    setFocusedSharer(currentUser);
+  };
+
   const otherUsers = users.filter((u) => u.id !== socketRef.current?.id);
 
   return (
     <>
-      {/* ── Cinematic background — always present on all pages ── */}
       <AtmosphericBackground />
-
-      {/* ── UI-level ambient lighting — sits between bg and UI ── */}
       <AmbientLight />
 
-      {/* ── Page transition: Login ↔ Main ──────────────────────
-          AnimatePresence mode="wait" ensures exit animation
-          completes before the next page enters.
-      ─────────────────────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         {!joined ? (
           <PageTransition key="login">
@@ -191,7 +202,7 @@ export default function App() {
               connectionStatuses={connectionStatuses}
               activeSharers={activeSharers}
               isSharing={isSharing}
-              onViewShare={viewShare}
+              onViewShare={handleOpenFocus}
               onStartShare={startSharingWithQuality}
               onStopShare={stopSharing}
               messages={messages}
@@ -211,13 +222,13 @@ export default function App() {
               ownVideoRef={ownVideoRef}
               videoRefs={videoRefs}
               socketId={socketRef.current?.id}
-              onFullscreen={setFullscreenVideo}
+              onFullscreen={handleOpenFocus}
+              onOwnFullscreen={handleOpenOwnFocus}
             />
           </PageTransition>
         )}
       </AnimatePresence>
 
-      {/* ── Settings panel — spring modal with blurred backdrop ── */}
       <ModalMotion
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -231,32 +242,22 @@ export default function App() {
         />
       </ModalMotion>
 
-      {/* ── Notification — slides in from top, auto-keyed ── */}
-      <NotificationMotion message={notification}>
-        <NotificationBar message={notification} onClose={() => setNotification('')} />
-      </NotificationMotion>
+      {/* NotificationBar handles its own AnimatePresence internally */}
+      <NotificationBar message={notification} onClose={() => setNotification('')} />
 
-      {/* ── Fullscreen video — cinematic scale entrance ── */}
-      <FullscreenMotion
-        isOpen={!!fullscreenVideo}
-        onClose={() => setFullscreenVideo(null)}
-      >
-        <video
-          ref={(el) => el && (el.srcObject = fullscreenVideo)}
-          autoPlay
-          playsInline
-          className="max-w-full max-h-full"
-          onClick={(e) => e.stopPropagation()}
-        />
-        <button
-          className="absolute top-4 right-4 text-white bg-black/50 rounded-full p-2 transition-opacity hover:opacity-80"
-          onClick={() => setFullscreenVideo(null)}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </FullscreenMotion>
+      <AnimatePresence>
+        {focusedStream && (
+          <CinematicFocus
+            key="cinematic-focus"
+            stream={focusedStream}
+            sharerName={focusedSharer}
+            onClose={() => {
+              setFocusedStream(null);
+              setFocusedSharer('');
+            }}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
