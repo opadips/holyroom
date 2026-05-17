@@ -21,17 +21,16 @@ export default function SettingsPanel({
   };
 
   return (
-    // ⚠️ هیچ position/top/right/left/z-index اینجا نیست.
-    // centering و z-index کاملاً توسط ModalMotion در App.js مدیریت میشه.
     <div className="w-80 glass p-6 max-h-[80vh] overflow-y-auto">
-      <h2 className="text-lg font-bold mb-6 text-purple-300 tracking-tight">Settings</h2>
+      <h2 className="ty-h4 mb-6">Settings</h2>
 
       <div className="mb-5">
-        <label className="block text-sm text-gray-400 mb-2">Screen Share Quality</label>
+        <label className="ty-label block mb-2">Screen Share Quality</label>
         <select
           value={qualityPreset}
           onChange={handlePresetChange}
-          className="w-full bg-gray-900/80 text-white border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+          className="w-full bg-gray-900/80 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all ty-body--sm"
+          style={{ color: 'var(--tx-primary)' }}
         >
           {PRESET_OPTIONS.map((opt) => (
             <option key={opt.key} value={opt.key}>{opt.label}</option>
@@ -42,17 +41,17 @@ export default function SettingsPanel({
       {qualityPreset === 'custom' && (
         <div className="space-y-3 mb-5 p-4 bg-black/40 rounded-xl border border-white/10">
           {[
-            { label: 'Width (px)',      field: 'width' },
-            { label: 'Height (px)',     field: 'height' },
-            { label: 'Frame Rate (fps)',field: 'fps' },
+            { label: 'Width (px)',       field: 'width'  },
+            { label: 'Height (px)',      field: 'height' },
+            { label: 'Frame Rate (fps)', field: 'fps'    },
           ].map(({ label, field }) => (
             <div key={field}>
-              <label className="block text-xs text-gray-400 mb-1">{label}</label>
+              <label className="ty-label block mb-1">{label}</label>
               <input
                 type="number"
                 value={customQuality[field]}
                 onChange={(e) => handleCustomChange(field, e.target.value)}
-                className="w-full input-field text-sm"
+                className="w-full input-field"
               />
             </div>
           ))}
@@ -61,7 +60,7 @@ export default function SettingsPanel({
 
       <button
         onClick={onClose}
-        className="w-full py-2.5 bg-purple-600/10 border border-purple-500/20 text-purple-300 hover:bg-purple-600/20 hover:border-purple-500/40 rounded-xl transition-all duration-300 text-sm font-medium"
+        className="w-full py-2.5 bg-purple-600/10 border border-purple-500/20 hover:bg-purple-600/20 hover:border-purple-500/40 rounded-xl transition-all duration-300 ty-btn ty-accent"
       >
         Close
       </button>

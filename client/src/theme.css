@@ -1,10 +1,8 @@
 :root {
-  /* ─── Base Colors ─────────────────────────────────────────── */
   --bg-primary:   #00000f;
   --bg-secondary: #0b0b1f;
   --bg-radial: radial-gradient(ellipse at 50% 0%, #0b0b1f 0%, #00000f 70%);
 
-  /* ─── Accent Palette ──────────────────────────────────────── */
   --color-purple:      #a855f7;
   --color-purple-dim:  rgba(168, 85, 247, 0.18);
   --color-purple-edge: rgba(168, 85, 247, 0.28);
@@ -13,35 +11,29 @@
   --color-cyan:        #22d3ee;
   --color-cyan-dim:    rgba(34, 211, 238, 0.14);
 
-  /* ─── Typography ──────────────────────────────────────────── */
-  --color-text:        #e0e0ff;
-  --color-text-muted:  #9ca3af;
+  --font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  --font-body:    'Inter Tight', 'Inter', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans:    'Inter Tight', 'Inter', system-ui, sans-serif;
+
+  --color-text:        rgba(228, 228, 255, 0.95);
+  --color-text-muted:  rgba(140, 140, 180, 0.55);
   --color-accent:      #a855f7;
   --color-accent-blue: #6366f1;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* ─── Transitions ─────────────────────────────────────────── */
   --transition-fast:   0.2s ease;
   --transition-normal: 0.4s ease;
   --transition-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* ═══════════════════════════════════════════════════════════
-     GLASS SYSTEM — tokens used by GlassPanel.css + legacy .glass
-     ═══════════════════════════════════════════════════════════ */
-
-  /* Default glass surface */
   --glass-bg:           rgba(8, 8, 18, 0.55);
   --glass-blur:         blur(22px);
   --glass-border:       1px solid rgba(255, 255, 255, 0.055);
   --glass-hover-border: rgba(255, 255, 255, 0.10);
-
-  /* Shadow system — 4-layer depth */
   --glass-shadow:
     0 24px 64px rgba(0, 0, 0, 0.55),
     0 8px 24px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.055),
     inset 0 -1px 0 rgba(0, 0, 0, 0.30);
-
   --glass-hover-shadow:
     0 32px 80px rgba(0, 0, 0, 0.65),
     0 12px 32px rgba(0, 0, 0, 0.40),
@@ -49,18 +41,15 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     inset 0 -1px 0 rgba(0, 0, 0, 0.30);
 
-  /* Panel surfaces — header / sidebar / footer */
   --panel-bg:     rgba(6, 6, 16, 0.68);
   --panel-blur:   blur(28px);
   --panel-border: 1px solid rgba(168, 85, 247, 0.07);
 
-  /* Card surface */
   --card-bg:           rgba(10, 10, 22, 0.60);
   --card-blur:         blur(28px);
   --card-border:       1px solid rgba(168, 85, 247, 0.10);
   --card-hover-border: rgba(168, 85, 247, 0.22);
 
-  /* Modal surface */
   --modal-bg:     rgba(10, 8, 24, 0.75);
   --modal-blur:   blur(40px);
   --modal-border: 1px solid rgba(168, 85, 247, 0.15);
@@ -71,7 +60,6 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     inset 0 -1px 0 rgba(0, 0, 0, 0.40);
 
-  /* Inset / sunken surface */
   --inset-bg:     rgba(0, 0, 8, 0.45);
   --inset-blur:   blur(12px);
   --inset-border: 1px solid rgba(255, 255, 255, 0.04);
@@ -80,36 +68,26 @@
     inset 0 1px 0 rgba(0, 0, 0, 0.60),
     0 1px 0 rgba(255, 255, 255, 0.03);
 
-  /* ═══════════════════════════════════════════════════════════
-     BUTTONS
-     ═══════════════════════════════════════════════════════════ */
   --btn-primary-bg:           linear-gradient(135deg, #7c3aed, #6366f1);
   --btn-primary-shadow:       0 4px 15px rgba(124, 58, 237, 0.40);
   --btn-primary-hover-shadow: 0 6px 25px rgba(124, 58, 237, 0.70),
                               0 0 0 2px rgba(168, 85, 247, 0.30);
-
   --btn-danger-bg:           rgba(239, 68, 68, 0.15);
   --btn-danger-border:       1px solid rgba(239, 68, 68, 0.40);
   --btn-danger-color:        #fca5a5;
   --btn-danger-hover-bg:     rgba(239, 68, 68, 0.25);
   --btn-danger-hover-border: rgba(239, 68, 68, 0.60);
 
-  /* ═══════════════════════════════════════════════════════════
-     INPUTS
-     ═══════════════════════════════════════════════════════════ */
   --input-bg:           rgba(255, 255, 255, 0.05);
   --input-border:       1px solid rgba(255, 255, 255, 0.08);
   --input-focus-border: #a855f7;
   --input-focus-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
 
-  /* ═══════════════════════════════════════════════════════════
-     Z-INDEX STACK
-     ═══════════════════════════════════════════════════════════ */
-  --z-background:    0;   /* AtmosphericBackground */
-  --z-base:         10;   /* MainLayout, LoginPage */
-  --z-sidebar:      20;   /* Sidebar, Header, Footer panels */
-  --z-overlay:      30;   /* SettingsPanel, secondary overlays */
-  --z-notification: 40;   /* NotificationBar */
-  --z-fullscreen:   50;   /* Fullscreen video */
-  --z-modal:        60;   /* Future modals */
+  --z-background:    0;
+  --z-base:         10;
+  --z-sidebar:      20;
+  --z-overlay:      30;
+  --z-notification: 40;
+  --z-fullscreen:   50;
+  --z-modal:        60;
 }
