@@ -2,61 +2,36 @@
 title Holyroom Launcher
 set ROOT=%~dp0
 
-echo [INFO] Checking port 3001...
+:: Kill previous processes on ports 3000 and 3001
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3001"') do (
-    if not "%%a"=="0" (
-        echo [INFO] Killing process tree on port 3001 (PID: %%a)
-        taskkill /F /T /PID %%a >nul 2>&1
-    )
+    if not "%%a"=="0" taskkill /F /PID %%a >nul 2>&1
 )
-
-echo [INFO] Checking port 3000...
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000"') do (
-    if not "%%a"=="0" (
-        echo [INFO] Killing process tree on port 3000 (PID: %%a)
-        taskkill /F /T /PID %%a >nul 2>&1
-    )
+    if not "%%a"=="0" taskkill /F /PID %%a >nul 2>&1
+)
+timeout /t 2 /nobreak >nul
+
+:: Check for SSL certificates
+if exist "%ROOT%cert.pem" if exist "%ROOT%key.pem" (
+    set HTTPS=true
+    set SSL_CRT_FILE=../cert.pem
+    set SSL_KEY_FILE=../key.pem
+    echo [INFO] SSL certificates found. Running with HTTPS.
+) else (
+    set HTTPS=false
+    set SSL_CRT_FILE=
+    set SSL_KEY_FILE=
+    echo [WARN] SSL certificates not found. Running with HTTP.
+    echo [WARN] Microphone and screen sharing will NOT work without HTTPS.
 )
 
-echo [INFO] Waiting for ports to release...
-timeout /t 5 /nobreak >nul
-
-:: Re-check ports
-netstat -ano | findstr ":3001" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [WARNING] Port 3001 is still in use. Killing all node.exe processes...
-    taskkill /F /IM node.exe >nul 2>&1
-    timeout /t 3 /nobreak >nul
-    netstat -ano | findstr ":3001" >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo [ERROR] Port 3001 is still in use. Please restart your computer or change the port.
-        pause
-        exit /b
-    )
-)
-
-netstat -ano | findstr ":3000" >nul 2>&1
-if %errorlevel% equ 0 (
-    echo [WARNING] Port 3000 is still in use. Killing all node.exe processes...
-    taskkill /F /IM node.exe >nul 2>&1
-    timeout /t 3 /nobreak >nul
-    netstat -ano | findstr ":3000" >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo [ERROR] Port 3000 is still in use. Please restart your computer or change the port.
-        pause
-        exit /b
-    )
-)
-
-echo [INFO] Ports are free. Checking dependencies...
-
+:: Install dependencies if missing
 if not exist "%ROOT%server\node_modules" (
     echo Installing server dependencies...
     cd /d "%ROOT%server"
     call npm install
     cd /d "%ROOT%"
 )
-
 if not exist "%ROOT%client\node_modules" (
     echo Installing client dependencies...
     cd /d "%ROOT%client"
@@ -64,7 +39,7 @@ if not exist "%ROOT%client\node_modules" (
     cd /d "%ROOT%"
 )
 
-echo Starting server and client...
+:: Start server and client
 start "Holyroom Server" cmd /k "cd /d "%ROOT%server" && npm run dev"
 start "Holyroom Client" cmd /k "cd /d "%ROOT%client" && npm start"
 

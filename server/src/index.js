@@ -1,5 +1,4 @@
 const express = require('express');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { Server } = require('socket.io');
@@ -8,12 +7,25 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-const options = {
-  key: fs.readFileSync(path.join(__dirname, '..', '..', 'key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, '..', '..', 'cert.pem')),
-};
+let server;
 
-const server = https.createServer(options, app);
+const keyPath = path.join(__dirname, '..', '..', 'key.pem');
+const certPath = path.join(__dirname, '..', '..', 'cert.pem');
+
+if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+  const https = require('https');
+  const options = {
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(certPath),
+  };
+  server = https.createServer(options, app);
+  console.log('[INFO] SSL certificates found. Running HTTPS server.');
+} else {
+  const http = require('http');
+  server = http.createServer(app);
+  console.log('[WARN] SSL certificates not found. Running HTTP server.');
+  console.log('[WARN] Microphone and screen sharing will NOT work without HTTPS.');
+}
 
 const io = new Server(server, {
   cors: {
