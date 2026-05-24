@@ -115,6 +115,8 @@ function useMouseGlow(glowRef) {
     let animId;
 
     const onMove = (e) => {
+      // وقتی CinematicFocus باز هست موس رو دنبال نکن
+      if (document.body.classList.contains('cinematic-focus-open')) return;
       targetX = e.clientX;
       targetY = e.clientY;
     };
@@ -148,6 +150,7 @@ function useParallax(layer1Ref, layer2Ref) {
     let animId;
 
     const onMove = (e) => {
+      if (document.body.classList.contains('cinematic-focus-open')) return;
       const dx = (e.clientX / window.innerWidth - 0.5) * 2;
       const dy = (e.clientY / window.innerHeight - 0.5) * 2;
       targetX = dx;

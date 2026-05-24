@@ -14,11 +14,16 @@
 .al-root {
   position: fixed;
   inset: 0;
-  z-index: 1;          /* بین background (0) و UI (10) */
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
   isolation: isolate;
   will-change: transform;
+  transition: opacity 0.4s ease;
+}
+
+body.cinematic-focus-open .al-root {
+  opacity: 0;
 }
 
 /* ══════════════════════════════════════════════════════════════

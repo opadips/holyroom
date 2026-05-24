@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import io from 'socket.io-client';
 import { useWebRTC } from './hooks/useWebRTC';
@@ -36,6 +36,9 @@ export default function App() {
   const [focusedStream, setFocusedStream]     = useState(null);
   const [focusedSharer, setFocusedSharer]     = useState('');
 
+  // sharerId که منتظر stream هستیم
+  const pendingFocusRef = useRef(null);
+
   const socketRef   = useRef(null);
   const ownVideoRef = useRef(null);
   const videoRefs   = useRef(new Map());
@@ -53,6 +56,19 @@ export default function App() {
     handleUserStartedSharing, handleUserStoppedSharing,
     setActiveSharers, setLocalStreamManually, setSharingState, reset,
   } = useWebRTC(socketRef, effectiveQuality);
+
+  // وقتی remoteStreams آپدیت میشه، اگه pending focus داریم باز می‌کنیم
+  useEffect(() => {
+    const id = pendingFocusRef.current;
+    if (!id) return;
+    const stream = remoteStreams.get(id);
+    if (stream) {
+      const sharer = activeSharers.find((s) => s.id === id);
+      setFocusedStream(stream);
+      setFocusedSharer(sharer?.name ?? '');
+      pendingFocusRef.current = null;
+    }
+  }, [remoteStreams, activeSharers]);
 
   useEffect(() => {
     if (!joined) return;
@@ -72,10 +88,14 @@ export default function App() {
     socket.on('userStoppedSharing', (sharer) => {
       handleUserStoppedSharing(sharer);
       setNotification(`${sharer.name} stopped sharing`);
+      // اگه focused stream همین بود ببند
       setFocusedStream((prev) => {
         if (prev && remoteStreams.get(sharer.id) === prev) return null;
         return prev;
       });
+      if (pendingFocusRef.current === sharer.id) {
+        pendingFocusRef.current = null;
+      }
     });
     socket.on('newViewer',               ({ viewerId, viewerName }) => handleNewViewer(viewerId, viewerName));
     socket.on('webrtcOffer',             ({ from, offer })          => handleOffer(from, offer));
@@ -136,6 +156,7 @@ export default function App() {
     setUsers([]);
     setFocusedStream(null);
     setFocusedSharer('');
+    pendingFocusRef.current = null;
   };
 
   const startSharingWithQuality = async () => {
@@ -160,19 +181,29 @@ export default function App() {
     }
   };
 
-  const handleOpenFocus = (sharerId) => {
-    const stream = remoteStreams.get(sharerId);
-    const sharer = activeSharers.find((s) => s.id === sharerId);
-    if (!stream) return;
-    setFocusedStream(stream);
-    setFocusedSharer(sharer?.name ?? '');
-  };
+  // برای remote streams:
+  // اگه stream از قبل آماده‌ست مستقیم باز کن
+  // اگه نه، viewShare صدا بزن و منتظر remoteStreams آپدیت بمون
+  const handleOpenFocus = useCallback((sharerId) => {
+    const existing = remoteStreams.get(sharerId);
+    const sharer   = activeSharers.find((s) => s.id === sharerId);
 
-  const handleOpenOwnFocus = () => {
+    if (existing) {
+      setFocusedStream(existing);
+      setFocusedSharer(sharer?.name ?? '');
+    } else {
+      // stream هنوز نیومده — viewShare بزن و منتظر بمون
+      pendingFocusRef.current = sharerId;
+      viewShare(sharerId);
+    }
+  }, [remoteStreams, activeSharers, viewShare]);
+
+  // برای own stream
+  const handleOpenOwnFocus = useCallback(() => {
     if (!localStream) return;
     setFocusedStream(localStream);
     setFocusedSharer(currentUser);
-  };
+  }, [localStream, currentUser]);
 
   const otherUsers = users.filter((u) => u.id !== socketRef.current?.id);
 
@@ -242,7 +273,6 @@ export default function App() {
         />
       </ModalMotion>
 
-      {/* NotificationBar handles its own AnimatePresence internally */}
       <NotificationBar message={notification} onClose={() => setNotification('')} />
 
       <AnimatePresence>
