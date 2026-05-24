@@ -104,7 +104,7 @@ git clone https://github.com/opadips/holyroom.git
 cd holyroom
 ```
 
-### 2. (Optional) Generate SSL certificates for voice and screen sharing
+### 2. (Optional) Generate SSL certificates 
 
 If you skip this step, the app will run on HTTP and you can still use **text chat**.
 To enable microphone and screen sharing, generate certificates with **mkcert**:
@@ -114,7 +114,7 @@ To enable microphone and screen sharing, generate certificates with **mkcert**:
 .\mkcert.exe -install
 .\mkcert.exe localhost 127.0.0.1 ::1 YOUR_LOCAL_IP
 
-# Rename the generated files:
+# Rename the generated files: (for windows powershell)
 Move-Item -Path "localhost+*.pem" -Destination "cert.pem"
 Move-Item -Path "localhost+*-key.pem" -Destination "key.pem"
 ```
