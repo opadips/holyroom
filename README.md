@@ -119,9 +119,12 @@ Move-Item -Path "localhost+*-key.pem" -Destination "key.pem"
 
 ### 3. Launch the application
 
-```powershell
-.\start.bat
-```
+| Command | Location | Description |
+|---------|----------|-------------|
+| `.\start.bat` | Root | Launch everything (install deps if missing) |
+| `npm run dev` | `server/` | Start the backend with hot reload (nodemon) |
+| `npm start` | `client/` | Start the React dev server with HTTPS |
+
 
 The first run will automatically install all dependencies. After that, it starts the server (port 3001) and the client (port 3000) in two separate windows.
 
