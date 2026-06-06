@@ -16,16 +16,11 @@ export default function InputBar({ input, setInput, isMuted, onToggleMute, onSen
   return (
     <>
       <ParticleCanvas canvasRef={canvasRef} />
-
-      <div className="p-4 panel-footer flex items-center gap-3 relative z-10">
+      <div className="panel-footer flex items-center gap-2.5 relative z-10" style={{ padding: '0.75rem 1rem' }}>
         <MuteButton isMuted={isMuted} onToggle={onToggleMute} />
 
-        <AnimatedBorder
-          isActive={focused}
-          color="purple"
-          className="flex flex-1 gap-3 rounded-xl"
-        >
-          <div className="flex flex-1 gap-3 p-1">
+        <AnimatedBorder isActive={focused} color="purple" className="flex flex-1 gap-2 rounded-xl">
+          <div className="flex flex-1 gap-2 p-1">
             <input
               type="text"
               value={input}
@@ -33,13 +28,19 @@ export default function InputBar({ input, setInput, isMuted, onToggleMute, onSen
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
-              placeholder="Message #general"
-              className="flex-1 input-field"
+              placeholder="Send a message…"
+              style={{
+                flex: 1,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                color: 'var(--tx-primary)',
+                fontFamily: 'var(--font-body)',
+                fontSize: '0.875rem',
+                padding: '0.5rem 0.5rem',
+              }}
             />
             <div ref={sendBtnRef}>
               <SendButton onSend={handleSend} disabled={!input.trim()} />

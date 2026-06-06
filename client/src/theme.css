@@ -1,93 +1,105 @@
 :root {
-  --bg-primary:   #00000f;
-  --bg-secondary: #0b0b1f;
-  --bg-radial: radial-gradient(ellipse at 50% 0%, #0b0b1f 0%, #00000f 70%);
+  /* ── Base palette ── */
+  --bg-void:      #04040a;
+  --bg-primary:   #060610;
+  --bg-secondary: #0a0a1a;
+  --bg-surface:   #0e0e20;
+  --bg-elevated:  #12122a;
 
-  --color-purple:      #a855f7;
-  --color-purple-dim:  rgba(168, 85, 247, 0.18);
-  --color-purple-edge: rgba(168, 85, 247, 0.28);
-  --color-blue:        #6366f1;
-  --color-blue-dim:    rgba(99, 102, 241, 0.18);
-  --color-cyan:        #22d3ee;
-  --color-cyan-dim:    rgba(34, 211, 238, 0.14);
+  /* ── Brand accent — refined indigo-violet ── */
+  --accent:          #7c6bf0;
+  --accent-bright:   #9d8ff7;
+  --accent-dim:      rgba(124, 107, 240, 0.15);
+  --accent-edge:     rgba(124, 107, 240, 0.28);
+  --accent-glow:     rgba(124, 107, 240, 0.40);
 
-  --font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
-  --font-body:    'Inter Tight', 'Inter', system-ui, sans-serif;
+  /* ── Secondary tones ── */
+  --teal:        #2dd4bf;
+  --teal-dim:    rgba(45, 212, 191, 0.12);
+  --rose:        #f43f5e;
+  --rose-dim:    rgba(244, 63, 94, 0.12);
+  --amber:       #f59e0b;
+  --amber-dim:   rgba(245, 158, 11, 0.12);
+  --emerald:     #10b981;
+  --emerald-dim: rgba(16, 185, 129, 0.12);
+
+  /* ── Typography ── */
+  --font-display: 'DM Sans', 'Inter', system-ui, sans-serif;
+  --font-body:    'DM Sans', 'Inter', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
-  --font-sans:    'Inter Tight', 'Inter', system-ui, sans-serif;
 
-  --color-text:        rgba(228, 228, 255, 0.95);
-  --color-text-muted:  rgba(140, 140, 180, 0.55);
-  --color-accent:      #a855f7;
-  --color-accent-blue: #6366f1;
+  /* ── Text colors ── */
+  --tx-primary:   rgba(235, 235, 255, 0.96);
+  --tx-secondary: rgba(180, 178, 220, 0.78);
+  --tx-tertiary:  rgba(140, 138, 185, 0.55);
+  --tx-ghost:     rgba(110, 108, 160, 0.38);
+  --tx-accent:    #9d8ff7;
+  --tx-teal:      #2dd4bf;
+  --tx-danger:    #fb7185;
+  --tx-success:   #34d399;
+  --tx-warning:   #fbbf24;
 
-  --transition-fast:   0.2s ease;
-  --transition-normal: 0.4s ease;
-  --transition-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* ── Transitions ── */
+  --t-fast:   0.15s ease;
+  --t-normal: 0.28s ease;
+  --t-spring: 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --glass-bg:           rgba(8, 8, 18, 0.55);
-  --glass-blur:         blur(22px);
-  --glass-border:       1px solid rgba(255, 255, 255, 0.055);
-  --glass-hover-border: rgba(255, 255, 255, 0.10);
-  --glass-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.55),
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.055),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.30);
-  --glass-hover-shadow:
-    0 32px 80px rgba(0, 0, 0, 0.65),
-    0 12px 32px rgba(0, 0, 0, 0.40),
-    0 0 40px rgba(139, 92, 246, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.30);
+  /* ── Surfaces ── */
+  --glass-bg:     rgba(10, 10, 26, 0.60);
+  --glass-blur:   blur(24px);
+  --glass-border: 1px solid rgba(255,255,255, 0.06);
+  --glass-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 6px 20px rgba(0,0,0,0.35),
+                  inset 0 1px 0 rgba(255,255,255,0.05);
 
-  --panel-bg:     rgba(6, 6, 16, 0.68);
-  --panel-blur:   blur(28px);
-  --panel-border: 1px solid rgba(168, 85, 247, 0.07);
+  --panel-bg:     rgba(8, 8, 20, 0.72);
+  --panel-blur:   blur(32px);
+  --panel-border: 1px solid rgba(124, 107, 240, 0.08);
 
-  --card-bg:           rgba(10, 10, 22, 0.60);
-  --card-blur:         blur(28px);
-  --card-border:       1px solid rgba(168, 85, 247, 0.10);
-  --card-hover-border: rgba(168, 85, 247, 0.22);
+  --card-bg:      rgba(12, 12, 28, 0.65);
+  --card-blur:    blur(20px);
+  --card-border:  1px solid rgba(255,255,255,0.055);
+  --card-hover-border: rgba(124, 107, 240, 0.20);
 
-  --modal-bg:     rgba(10, 8, 24, 0.75);
+  --modal-bg:     rgba(8, 8, 22, 0.80);
   --modal-blur:   blur(40px);
-  --modal-border: 1px solid rgba(168, 85, 247, 0.15);
-  --modal-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.70),
-    0 16px 48px  rgba(0, 0, 0, 0.50),
-    0 0 60px     rgba(100, 50, 200, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.40);
+  --modal-border: 1px solid rgba(124, 107, 240, 0.18);
+  --modal-shadow: 0 40px 100px rgba(0,0,0,0.70), 0 0 60px rgba(90,70,200,0.08),
+                  inset 0 1px 0 rgba(255,255,255,0.07);
 
-  --inset-bg:     rgba(0, 0, 8, 0.45);
-  --inset-blur:   blur(12px);
-  --inset-border: 1px solid rgba(255, 255, 255, 0.04);
-  --inset-shadow:
-    inset 0 2px 12px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(0, 0, 0, 0.60),
-    0 1px 0 rgba(255, 255, 255, 0.03);
+  --inset-bg:     rgba(0, 0, 10, 0.50);
+  --inset-border: 1px solid rgba(255,255,255,0.04);
+  --inset-shadow: inset 0 2px 10px rgba(0,0,0,0.40), inset 0 1px 0 rgba(0,0,0,0.60);
 
-  --btn-primary-bg:           linear-gradient(135deg, #7c3aed, #6366f1);
-  --btn-primary-shadow:       0 4px 15px rgba(124, 58, 237, 0.40);
-  --btn-primary-hover-shadow: 0 6px 25px rgba(124, 58, 237, 0.70),
-                              0 0 0 2px rgba(168, 85, 247, 0.30);
-  --btn-danger-bg:           rgba(239, 68, 68, 0.15);
-  --btn-danger-border:       1px solid rgba(239, 68, 68, 0.40);
-  --btn-danger-color:        #fca5a5;
-  --btn-danger-hover-bg:     rgba(239, 68, 68, 0.25);
-  --btn-danger-hover-border: rgba(239, 68, 68, 0.60);
+  /* ── Buttons ── */
+  --btn-primary-bg:     linear-gradient(135deg, #6a5adf 0%, #7c6bf0 50%, #8b7af2 100%);
+  --btn-primary-shadow: 0 4px 20px rgba(106, 90, 223, 0.38);
+  --btn-primary-glow:   0 8px 32px rgba(124, 107, 240, 0.60), 0 0 0 1px rgba(157, 143, 247, 0.20);
 
-  --input-bg:           rgba(255, 255, 255, 0.05);
-  --input-border:       1px solid rgba(255, 255, 255, 0.08);
-  --input-focus-border: #a855f7;
-  --input-focus-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  --btn-danger-bg:      rgba(244, 63, 94, 0.12);
+  --btn-danger-border:  rgba(244, 63, 94, 0.35);
+  --btn-danger-color:   #fb7185;
 
-  --z-background:    0;
+  /* ── Input ── */
+  --input-bg:           rgba(255,255,255,0.04);
+  --input-border:       rgba(255,255,255,0.07);
+  --input-focus-border: #7c6bf0;
+  --input-focus-shadow: 0 0 0 3px rgba(124, 107, 240, 0.16);
+
+  /* ── Z-index layers ── */
+  --z-bg:           0;
   --z-base:         10;
   --z-sidebar:      20;
   --z-overlay:      30;
   --z-notification: 40;
   --z-fullscreen:   50;
   --z-modal:        60;
+
+  /* Color aliases for backwards compat */
+  --color-text:        var(--tx-primary);
+  --color-text-muted:  var(--tx-tertiary);
+  --color-accent:      var(--accent);
+  --color-purple:      var(--accent);
+  --color-purple-dim:  var(--accent-dim);
+  --color-purple-edge: var(--accent-edge);
+  --bg-radial: radial-gradient(ellipse at 50% 0%, #0a0a1a 0%, #04040a 70%);
 }

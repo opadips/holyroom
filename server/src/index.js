@@ -1,4 +1,21 @@
 const express = require('express');
+const os = require('os');
+
+// ── Auto-detect LAN IP ───────────────────────────────────────
+function getLanIP() {
+  const nets = os.networkInterfaces();
+  for (const iface of Object.values(nets)) {
+    for (const net of iface) {
+      // IPv4, not internal (not 127.x.x.x), not link-local (169.x)
+      if (net.family === 'IPv4' && !net.internal && !net.address.startsWith('169.')) {
+        return net.address;
+      }
+    }
+  }
+  return '127.0.0.1'; // fallback
+}
+
+const LAN_IP = getLanIP();
 const fs = require('fs');
 const path = require('path');
 const { Server } = require('socket.io');
@@ -6,6 +23,12 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+
+// ── Expose server info to client ─────────────────────────────
+// Client fetches this once on load to know where to connect.
+app.get('/server-info', (req, res) => {
+  res.json({ ip: LAN_IP, port: PORT });
+});
 
 let server;
 
@@ -157,5 +180,14 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log('');
+  console.log('  ┌─────────────────────────────────────────┐');
+  console.log(`  │  Holyroom server running                │`);
+  console.log(`  │                                         │`);
+  console.log(`  │  Local:   http://localhost:${PORT}         │`);
+  console.log(`  │  Network: http://${LAN_IP}:${PORT}  │`);
+  console.log(`  │                                         │`);
+  console.log(`  │  Share the Network URL with teammates   │`);
+  console.log('  └─────────────────────────────────────────┘');
+  console.log('');
 });

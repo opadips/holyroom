@@ -11,7 +11,37 @@ import AmbientLight from './components/AmbientLight';
 import CinematicFocus from './components/CinematicFocus';
 import { PageTransition, ModalMotion } from './components/MotionWrapper';
 
-const SOCKET_URL = `${window.location.protocol}//${window.location.hostname}:3001`;
+// ── Server URL resolution ────────────────────────────────────
+// Priority:
+//   1. REACT_APP_SERVER_URL in .env (requires restart after change)
+//   2. GET /server-info  — server reports its own LAN IP at runtime
+//   3. Same hostname as the page, port 3001
+async function resolveServerURL() {
+  // 1. Explicit override via .env
+  if (process.env.REACT_APP_SERVER_URL) {
+    const url = process.env.REACT_APP_SERVER_URL.replace(/\/+$/, ''); // strip trailing slash
+    console.log('[Holyroom] Server URL from .env:', url);
+    return url;
+  }
+
+  // 2. Ask the server itself — works for LAN without any config
+  try {
+    const infoURL = `${window.location.protocol}//${window.location.hostname}:3001/server-info`;
+    const res  = await fetch(infoURL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`/server-info returned ${res.status}`);
+    const { ip, port } = await res.json();
+    const url = `${window.location.protocol}//${ip}:${port}`;
+    console.log('[Holyroom] Server URL from /server-info:', url);
+    return url;
+  } catch (err) {
+    console.warn('[Holyroom] /server-info fetch failed:', err.message);
+  }
+
+  // 3. Last resort
+  const fallback = `${window.location.protocol}//${window.location.hostname}:3001`;
+  console.log('[Holyroom] Server URL fallback:', fallback);
+  return fallback;
+}
 
 const PRESET_OPTIONS = [
   { key: 'high',   width: 3840, height: 2160, fps: 60, label: '4K 60fps'    },
@@ -72,44 +102,56 @@ export default function App() {
 
   useEffect(() => {
     if (!joined) return;
-    const socket = io(SOCKET_URL);
-    socketRef.current = socket;
-    socket.emit('join', currentUser);
 
-    socket.on('messageHistory', setMessages);
-    socket.on('newMessage',     (msg) => setMessages((prev) => [...prev, msg]));
-    socket.on('userList',       setUsers);
-    socket.on('activeSharers',  setActiveSharers);
-    socket.on('error',          (err) => { alert(err); setJoined(false); });
-    socket.on('userStartedSharing', (sharer) => {
-      handleUserStartedSharing(sharer);
-      setNotification(`${sharer.name} is now sharing screen`);
-    });
-    socket.on('userStoppedSharing', (sharer) => {
-      handleUserStoppedSharing(sharer);
-      setNotification(`${sharer.name} stopped sharing`);
-      // اگه focused stream همین بود ببند
-      setFocusedStream((prev) => {
-        if (prev && remoteStreams.get(sharer.id) === prev) return null;
-        return prev;
+    // destroyed tracks whether the effect was cleaned up before the promise resolved
+    let destroyed = false;
+    let socket;
+
+    resolveServerURL().then((url) => {
+      if (destroyed) return; // effect already cleaned up — bail out
+
+      socket = io(url);
+      socketRef.current = socket;
+      socket.emit('join', currentUser);
+
+      socket.on('messageHistory', setMessages);
+      socket.on('newMessage',     (msg) => setMessages((prev) => [...prev, msg]));
+      socket.on('userList',       setUsers);
+      socket.on('activeSharers',  setActiveSharers);
+      socket.on('error',          (err) => { alert(err); setJoined(false); });
+      socket.on('userStartedSharing', (sharer) => {
+        handleUserStartedSharing(sharer);
+        setNotification(`${sharer.name} is now sharing screen`);
       });
-      if (pendingFocusRef.current === sharer.id) {
-        pendingFocusRef.current = null;
-      }
+      socket.on('userStoppedSharing', (sharer) => {
+        handleUserStoppedSharing(sharer);
+        setNotification(`${sharer.name} stopped sharing`);
+        setFocusedStream((prev) => {
+          if (prev && remoteStreams.get(sharer.id) === prev) return null;
+          return prev;
+        });
+        if (pendingFocusRef.current === sharer.id) {
+          pendingFocusRef.current = null;
+        }
+      });
+      socket.on('newViewer',               ({ viewerId, viewerName }) => handleNewViewer(viewerId, viewerName));
+      socket.on('webrtcOffer',             ({ from, offer })          => handleOffer(from, offer));
+      socket.on('webrtcAnswer',            ({ from, answer })         => handleAnswer(from, answer));
+      socket.on('webrtcIceCandidate',      ({ from, candidate })      => handleIceCandidate(from, candidate));
+      socket.on('newUser',                 (user)                     => handleNewUser(user));
+      socket.on('webrtcAudioOffer',        ({ from, offer })          => handleAudioOffer(from, offer));
+      socket.on('webrtcAudioAnswer',       ({ from, answer })         => handleAudioAnswer(from, answer));
+      socket.on('webrtcAudioIceCandidate', ({ from, candidate })      => handleAudioIceCandidate(from, candidate));
+      socket.on('connectionStatus',        ({ id, status }) =>
+        setConnectionStatuses((prev) => ({ ...prev, [id]: status }))
+      );
     });
-    socket.on('newViewer',               ({ viewerId, viewerName }) => handleNewViewer(viewerId, viewerName));
-    socket.on('webrtcOffer',             ({ from, offer })          => handleOffer(from, offer));
-    socket.on('webrtcAnswer',            ({ from, answer })         => handleAnswer(from, answer));
-    socket.on('webrtcIceCandidate',      ({ from, candidate })      => handleIceCandidate(from, candidate));
-    socket.on('newUser',                 (user)                     => handleNewUser(user));
-    socket.on('webrtcAudioOffer',        ({ from, offer })          => handleAudioOffer(from, offer));
-    socket.on('webrtcAudioAnswer',       ({ from, answer })         => handleAudioAnswer(from, answer));
-    socket.on('webrtcAudioIceCandidate', ({ from, candidate })      => handleAudioIceCandidate(from, candidate));
-    socket.on('connectionStatus',        ({ id, status }) =>
-      setConnectionStatuses((prev) => ({ ...prev, [id]: status }))
-    );
 
-    return () => { reset(); socket.disconnect(); };
+    return () => {
+      destroyed = true;
+      reset();
+      if (socket) socket.disconnect();
+    };
   }, [
     joined, currentUser,
     handleNewUser, handleNewViewer, handleOffer, handleAnswer, handleIceCandidate,
@@ -285,6 +327,8 @@ export default function App() {
               setFocusedStream(null);
               setFocusedSharer('');
             }}
+            isMuted={isMuted}
+            onToggleMute={toggleMute}
           />
         )}
       </AnimatePresence>

@@ -266,6 +266,44 @@
   gap: 8px;
 }
 
+/* ── Mute button ────────────────────────────────────────────── */
+.cf-hud__mute {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(200, 200, 220, 0.7);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cf-hud__mute:hover {
+  background: rgba(124, 107, 240, 0.15);
+  border-color: rgba(124, 107, 240, 0.35);
+  color: rgba(190, 175, 255, 0.95);
+  box-shadow: 0 0 14px rgba(124, 107, 240, 0.18);
+}
+
+.cf-hud__mute--muted {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #fb7185;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.12);
+}
+
+.cf-hud__mute--muted:hover {
+  background: rgba(244, 63, 94, 0.22);
+  border-color: rgba(244, 63, 94, 0.55);
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.22);
+}
+
 .cf-hud__close {
   display: flex;
   align-items: center;

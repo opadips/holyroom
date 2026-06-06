@@ -31,7 +31,7 @@
   align-items: center;
   gap: 3px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(124, 107, 240, 0.12);
   border-radius: 12px;
   padding: 6px 10px;
 }
@@ -41,7 +41,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: rgba(168, 85, 247, 0.55);
+  background: rgba(124, 107, 240, 0.55);
   animation: typingBounce 1.2s ease-in-out infinite;
 }
 
@@ -59,14 +59,14 @@
   width: 40px;
   height: 40px;
   border-radius: 0.75rem;
-  border: 1px solid rgba(168, 85, 247, 0.20);
-  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  border: 1px solid rgba(124, 107, 240, 0.20);
+  background: linear-gradient(135deg, #6a5adf 0%, #7c6bf0 50%, #8b7af2 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 4px 14px rgba(106, 90, 223, 0.35);
   transition: box-shadow 0.3s ease, opacity 0.2s ease;
   flex-shrink: 0;
 }
@@ -104,7 +104,7 @@
   position: absolute;
   inset: -4px;
   border-radius: inherit;
-  background: rgba(124, 58, 237, 0.25);
+  background: rgba(106, 90, 223, 0.25);
   filter: blur(8px);
   pointer-events: none;
 }
@@ -124,13 +124,13 @@
   width: 3px;
   height: 100%;
   border-radius: 2px;
-  background: rgba(168, 85, 247, 0.55);
+  background: rgba(124, 107, 240, 0.55);
   transform-origin: center;
   transition: background 0.3s ease;
 }
 
 .voice-bar--active .voice-bar__bar {
-  background: rgba(168, 85, 247, 0.85);
+  background: rgba(124, 107, 240, 0.85);
 }
 
 .voice-bar--muted .voice-bar__bar {
@@ -154,8 +154,8 @@
 }
 
 .mute-btn--active {
-  background: rgba(168, 85, 247, 0.12);
-  border: 1px solid rgba(168, 85, 247, 0.22);
+  background: rgba(124, 107, 240, 0.12);
+  border: 1px solid rgba(124, 107, 240, 0.22);
   color: rgba(200, 160, 255, 0.9);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -187,7 +187,7 @@
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  border: 1px solid rgba(124, 107, 240, 0.35);
   animation: mutePulse 2.5s ease-in-out infinite;
   pointer-events: none;
 }
@@ -216,12 +216,12 @@
 }
 
 .stream-btn--idle {
-  background: rgba(34, 211, 238, 0.10);
-  border: 1px solid rgba(34, 211, 238, 0.22);
-  color: rgba(100, 230, 248, 0.9);
+  background: rgba(45, 212, 191, 0.10);
+  border: 1px solid rgba(45, 212, 191, 0.22);
+  color: rgba(80, 220, 205, 0.9);
 }
 .stream-btn--idle:hover {
-  box-shadow: 0 0 20px rgba(34, 211, 238, 0.10);
+  box-shadow: 0 0 20px rgba(45, 212, 191, 0.10);
 }
 
 .stream-btn--active {
@@ -288,7 +288,7 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem 0.35rem 0.4rem;
   background: rgba(10, 10, 22, 0.75);
-  border: 1px solid rgba(168, 85, 247, 0.18);
+  border: 1px solid rgba(124, 107, 240, 0.18);
   border-radius: 999px;
   backdrop-filter: blur(12px);
   box-shadow:
@@ -390,7 +390,7 @@
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.04) 25%,
-    rgba(168, 85, 247, 0.07) 50%,
+    rgba(124, 107, 240, 0.07) 50%,
     rgba(255, 255, 255, 0.04) 75%
   );
   background-size: 200% 100%;
@@ -427,13 +427,13 @@
 }
 
 .animated-border--purple.animated-border--active::before {
-  border-color: rgba(168, 85, 247, 0.35);
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08), inset 0 0 12px rgba(168, 85, 247, 0.04);
+  border-color: rgba(124, 107, 240, 0.35);
+  box-shadow: 0 0 0 3px rgba(124, 107, 240, 0.08), inset 0 0 12px rgba(124, 107, 240, 0.04);
 }
 
 .animated-border--cyan.animated-border--active::before {
-  border-color: rgba(34, 211, 238, 0.30);
-  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.07), inset 0 0 12px rgba(34, 211, 238, 0.03);
+  border-color: rgba(45, 212, 191, 0.30);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.07), inset 0 0 12px rgba(45, 212, 191, 0.03);
 }
 
 .animated-border__sweep {
@@ -443,7 +443,7 @@
   background: conic-gradient(
     from var(--sweep-angle, 0deg),
     transparent 0%,
-    rgba(168, 85, 247, 0.45) 8%,
+    rgba(124, 107, 240, 0.45) 8%,
     transparent 16%
   );
   animation: borderSweepRing 2s linear infinite;
@@ -457,7 +457,7 @@
   background: conic-gradient(
     from var(--sweep-angle, 0deg),
     transparent 0%,
-    rgba(34, 211, 238, 0.40) 8%,
+    rgba(45, 212, 191, 0.40) 8%,
     transparent 16%
   );
 }
