@@ -80,7 +80,8 @@ export default function App() {
 
   const {
     activeSharers, isSharing, localStream, isMuted, remoteStreams,
-    stopSharing, viewShare, startVoiceCapture, toggleMute,
+    viewingSharers,
+    stopSharing, viewShare, disconnectView, startVoiceCapture, toggleMute,
     handleNewUser, handleNewViewer, handleOffer, handleAnswer, handleIceCandidate,
     handleAudioOffer, handleAudioAnswer, handleAudioIceCandidate,
     handleUserStartedSharing, handleUserStoppedSharing,
@@ -240,6 +241,23 @@ export default function App() {
     }
   }, [remoteStreams, activeSharers, viewShare]);
 
+  const handleDisconnectView = useCallback((sharerId) => {
+    disconnectView(sharerId);
+    setFocusedStream((prev) => {
+      const stream = remoteStreams.get(sharerId);
+      if (prev && stream === prev) return null;
+      return prev;
+    });
+    setFocusedSharer((prev) => {
+      const sharer = activeSharers.find((s) => s.id === sharerId);
+      if (sharer && prev === sharer.name) return '';
+      return prev;
+    });
+    if (pendingFocusRef.current === sharerId) {
+      pendingFocusRef.current = null;
+    }
+  }, [disconnectView, remoteStreams, activeSharers]);
+
   // برای own stream
   const handleOpenOwnFocus = useCallback(() => {
     if (!localStream) return;
@@ -276,6 +294,8 @@ export default function App() {
               activeSharers={activeSharers}
               isSharing={isSharing}
               onViewShare={handleOpenFocus}
+              onDisconnectView={handleDisconnectView}
+              viewingSharers={viewingSharers}
               onStartShare={startSharingWithQuality}
               onStopShare={stopSharing}
               messages={messages}

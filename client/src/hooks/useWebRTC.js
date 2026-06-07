@@ -10,6 +10,7 @@ export function useWebRTC(socketRef, quality) {
   const [activeSharers, setActiveSharers] = useState([]);
   const [isSharing, setIsSharing] = useState(false);
   const [remoteStreams, setRemoteStreams] = useState(new Map());
+  const [viewingSharers, setViewingSharers] = useState(new Set());
   const [localStream, setLocalStream] = useState(null);
   const [localAudioStream, setLocalAudioStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -182,6 +183,31 @@ export function useWebRTC(socketRef, quality) {
     (sharerId) => {
       if (!socketRef.current) return;
       socketRef.current.emit('joinScreenShare', { sharerId });
+      setViewingSharers((prev) => new Set(prev).add(sharerId));
+    },
+    [socketRef]
+  );
+
+  const disconnectView = useCallback(
+    (sharerId) => {
+      const pc = peerConnections.current.get(sharerId);
+      if (pc) {
+        pc.close();
+        peerConnections.current.delete(sharerId);
+      }
+      setRemoteStreams((prev) => {
+        const next = new Map(prev);
+        next.delete(sharerId);
+        return next;
+      });
+      setViewingSharers((prev) => {
+        const next = new Set(prev);
+        next.delete(sharerId);
+        return next;
+      });
+      if (socketRef.current) {
+        socketRef.current.emit('stopViewing', { sharerId });
+      }
     },
     [socketRef]
   );
@@ -256,6 +282,11 @@ export function useWebRTC(socketRef, quality) {
     }
     setRemoteStreams((prev) => {
       const next = new Map(prev);
+      next.delete(sharer.id);
+      return next;
+    });
+    setViewingSharers((prev) => {
+      const next = new Set(prev);
       next.delete(sharer.id);
       return next;
     });
@@ -336,6 +367,7 @@ export function useWebRTC(socketRef, quality) {
     setLocalAudioStream(null);
     setRemoteStreams(new Map());
     setIsMuted(false);
+    setViewingSharers(new Set());
   }, [stopVoiceCapture]);
 
   const setLocalStreamManually = useCallback((stream) => {
@@ -353,10 +385,12 @@ export function useWebRTC(socketRef, quality) {
     localStream,
     isMuted,
     remoteStreams,
+    viewingSharers,
     startVoiceCapture,
     toggleMute,
     stopSharing,
     viewShare,
+    disconnectView,
     handleNewUser,
     handleNewViewer,
     handleOffer,

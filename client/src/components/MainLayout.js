@@ -8,7 +8,8 @@ import ScreenShareBar from './ScreenShareBar';
 export default function MainLayout({
   currentUser, usersCount, onSettingsClick, onLeave,
   otherUsers, connectionStatuses, activeSharers, isSharing,
-  onViewShare, onStartShare, onStopShare,
+  onViewShare, onDisconnectView, viewingSharers,
+  onStartShare, onStopShare,
   messages, input, setInput, isMuted, onToggleMute, onSend,
   localStream, remoteStreams, ownVideoRef, videoRefs, socketId,
   onFullscreen, onOwnFullscreen,
@@ -30,6 +31,8 @@ export default function MainLayout({
           activeSharers={activeSharers}
           isSharing={isSharing}
           onViewShare={onViewShare}
+          onDisconnectView={onDisconnectView}
+          viewingSharers={viewingSharers}
           onStartShare={onStartShare}
           onStopShare={onStopShare}
           speakingUsers={speakingUsers}

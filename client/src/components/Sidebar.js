@@ -40,7 +40,8 @@ function SectionLabel({ children }) {
 
 export default function Sidebar({
   otherUsers, connectionStatuses, activeSharers, isSharing,
-  onViewShare, onStartShare, onStopShare, speakingUsers = [], audioStreams = new Map(),
+  onViewShare, onDisconnectView, viewingSharers = new Set(),
+  onStartShare, onStopShare, speakingUsers = [], audioStreams = new Map(),
 }) {
   return (
     <aside
@@ -136,25 +137,48 @@ export default function Sidebar({
                     }} />
                     <span className="ty-sidebar-user ty-truncate" style={{ maxWidth: 110 }}>{sharer.name}</span>
                   </div>
-                  <button
-                    onClick={() => onViewShare(sharer.id)}
-                    style={{
-                      padding: '0.22rem 0.6rem',
-                      background: 'rgba(124,107,240,0.15)',
-                      border: '1px solid rgba(124,107,240,0.25)',
-                      borderRadius: '0.4rem',
-                      color: 'var(--tx-accent)',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.18s ease',
-                      letterSpacing: '0.02em',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,107,240,0.25)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,107,240,0.15)'; }}
-                  >
-                    View
-                  </button>
+                  {viewingSharers.has(sharer.id) ? (
+                    <button
+                      onClick={() => onDisconnectView(sharer.id)}
+                      style={{
+                        padding: '0.22rem 0.6rem',
+                        background: 'rgba(239,68,68,0.12)',
+                        border: '1px solid rgba(239,68,68,0.28)',
+                        borderRadius: '0.4rem',
+                        color: '#f87171',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.18s ease',
+                        letterSpacing: '0.02em',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.22)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; }}
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onViewShare(sharer.id)}
+                      style={{
+                        padding: '0.22rem 0.6rem',
+                        background: 'rgba(124,107,240,0.15)',
+                        border: '1px solid rgba(124,107,240,0.25)',
+                        borderRadius: '0.4rem',
+                        color: 'var(--tx-accent)',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.18s ease',
+                        letterSpacing: '0.02em',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,107,240,0.25)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,107,240,0.15)'; }}
+                    >
+                      View
+                    </button>
+                  )}
                 </div>
               </StaggerItem>
             ))}
