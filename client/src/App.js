@@ -81,6 +81,7 @@ export default function App() {
   const {
     activeSharers, isSharing, localStream, isMuted, remoteStreams,
     viewingSharers,
+    userVolumes, mutedUsers, setUserVolume, muteUser, unmuteUser,
     stopSharing, viewShare, disconnectView, startVoiceCapture, toggleMute,
     handleNewUser, handleNewViewer, handleOffer, handleAnswer, handleIceCandidate,
     handleAudioOffer, handleAudioAnswer, handleAudioIceCandidate,
@@ -258,6 +259,14 @@ export default function App() {
     }
   }, [disconnectView, remoteStreams, activeSharers]);
 
+  const handleMentionUser = useCallback((name) => {
+    setInput((prev) => {
+      const mention = `@${name} `;
+      if (prev.endsWith(' ') || prev === '') return prev + mention;
+      return prev + ' ' + mention;
+    });
+  }, []);
+
   // برای own stream
   const handleOpenOwnFocus = useCallback(() => {
     if (!localStream) return;
@@ -296,6 +305,12 @@ export default function App() {
               onViewShare={handleOpenFocus}
               onDisconnectView={handleDisconnectView}
               viewingSharers={viewingSharers}
+              userVolumes={userVolumes}
+              mutedUsers={mutedUsers}
+              onSetUserVolume={setUserVolume}
+              onMuteUser={muteUser}
+              onUnmuteUser={unmuteUser}
+              onMentionUser={handleMentionUser}
               onStartShare={startSharingWithQuality}
               onStopShare={stopSharing}
               messages={messages}

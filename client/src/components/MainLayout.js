@@ -9,6 +9,7 @@ export default function MainLayout({
   currentUser, usersCount, onSettingsClick, onLeave,
   otherUsers, connectionStatuses, activeSharers, isSharing,
   onViewShare, onDisconnectView, viewingSharers,
+  userVolumes, mutedUsers, onSetUserVolume, onMuteUser, onUnmuteUser, onMentionUser,
   onStartShare, onStopShare,
   messages, input, setInput, isMuted, onToggleMute, onSend,
   localStream, remoteStreams, ownVideoRef, videoRefs, socketId,
@@ -33,6 +34,12 @@ export default function MainLayout({
           onViewShare={onViewShare}
           onDisconnectView={onDisconnectView}
           viewingSharers={viewingSharers}
+          userVolumes={userVolumes}
+          mutedUsers={mutedUsers}
+          onSetUserVolume={onSetUserVolume}
+          onMuteUser={onMuteUser}
+          onUnmuteUser={onUnmuteUser}
+          onMentionUser={onMentionUser}
           onStartShare={onStartShare}
           onStopShare={onStopShare}
           speakingUsers={speakingUsers}

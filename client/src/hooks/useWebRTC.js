@@ -17,7 +17,54 @@ export function useWebRTC(socketRef, quality) {
   const localStreamRef = useRef(null);
   const localAudioStreamRef = useRef(null);
   const isMutedRef = useRef(false);
-  const audioElements = useRef(new Map());
+  const audioElements  = useRef(new Map()); // userId -> HTMLAudioElement
+  const audioContexts  = useRef(new Map()); // userId -> AudioContext
+  const gainNodes      = useRef(new Map()); // userId -> GainNode
+
+  // ── Per-user volume controls ──────────────────────────────────
+  const loadPersistedVolumes = () => {
+    try { return JSON.parse(localStorage.getItem('holyroom_user_volumes') || '{}'); }
+    catch { return {}; }
+  };
+  const loadPersistedMuted = () => {
+    try { return new Set(JSON.parse(localStorage.getItem('holyroom_muted_users') || '[]')); }
+    catch { return new Set(); }
+  };
+  const [userVolumes, setUserVolumes] = useState(loadPersistedVolumes);
+  const [mutedUsers, setMutedUsers]   = useState(loadPersistedMuted);
+  const prevVolumes = useRef({});
+
+  // Connect an audio element through a GainNode for >100% boost support
+  const connectAudioGain = useCallback((userId, audio) => {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const src  = ctx.createMediaElementSource(audio);
+      const gain = ctx.createGain();
+      src.connect(gain);
+      gain.connect(ctx.destination);
+      audioContexts.current.set(userId, ctx);
+      gainNodes.current.set(userId, gain);
+      // audio.volume stays at 1.0; gain.gain.value handles the level
+      audio.volume = 1;
+      return gain;
+    } catch (err) {
+      console.warn('[Holyroom] Web Audio API unavailable, falling back to audio.volume', err);
+      return null;
+    }
+  }, []);
+
+  // Apply a 0-200 display volume to the actual audio output
+  const applyGain = useCallback((userId, displayVolume, muted) => {
+    const level = muted ? 0 : displayVolume / 100; // 0.0 – 2.0
+    const gain  = gainNodes.current.get(userId);
+    if (gain) {
+      gain.gain.value = level;
+    } else {
+      // Fallback: native Audio.volume (caps at 1.0)
+      const audio = audioElements.current.get(userId);
+      if (audio) audio.volume = Math.min(level, 1);
+    }
+  }, []);
 
   const createPeerConnection = useCallback(
     (partnerId) => {
@@ -85,8 +132,30 @@ export function useWebRTC(socketRef, quality) {
           } else {
             const audio = new Audio();
             audio.srcObject = stream;
-            audio.autoplay = true;
+            audio.autoplay  = true;
             audioElements.current.set(partnerId, audio);
+
+            // Connect through GainNode for 0-200% volume support
+            // Must wait for user gesture — AudioContext resumes on first interaction
+            const persisted = loadPersistedVolumes();
+            const muted     = loadPersistedMuted();
+            const vol       = persisted[partnerId] ?? 100;
+            audio.play().catch(() => {});
+            // Defer GainNode setup until audio is playing (needs user gesture)
+            const setupGain = () => {
+              const gain = connectAudioGain(partnerId, audio);
+              if (gain) {
+                gain.gain.value = muted.has(partnerId) ? 0 : vol / 100;
+              } else {
+                audio.volume = muted.has(partnerId) ? 0 : Math.min(vol / 100, 1);
+              }
+            };
+            if (document.hasFocus()) {
+              setupGain();
+            } else {
+              window.addEventListener('focus', setupGain, { once: true });
+              window.addEventListener('click', setupGain, { once: true });
+            }
           }
         }
       };
@@ -148,10 +217,11 @@ export function useWebRTC(socketRef, quality) {
     }
     audioPeerConnections.current.forEach((pc) => pc.close());
     audioPeerConnections.current.clear();
-    audioElements.current.forEach((audio) => {
-      audio.srcObject = null;
-    });
+    audioElements.current.forEach((audio) => { audio.srcObject = null; });
     audioElements.current.clear();
+    gainNodes.current.clear();
+    audioContexts.current.forEach((ctx) => { try { ctx.close(); } catch {} });
+    audioContexts.current.clear();
   }, []);
 
   const toggleMute = useCallback(() => {
@@ -211,6 +281,60 @@ export function useWebRTC(socketRef, quality) {
     },
     [socketRef]
   );
+
+  const setUserVolume = useCallback((userId, volume) => {
+    // Persist
+    setUserVolumes((prev) => {
+      const next = { ...prev, [userId]: volume };
+      try { localStorage.setItem('holyroom_user_volumes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    // If slider moved above 0 while muted, auto-unmute
+    setMutedUsers((prev) => {
+      if (volume > 0 && prev.has(userId)) {
+        const next = new Set(prev);
+        next.delete(userId);
+        try { localStorage.setItem('holyroom_muted_users', JSON.stringify([...next])); } catch {}
+        return next;
+      }
+      return prev;
+    });
+    // Apply to audio immediately
+    applyGain(userId, volume, false);
+  }, [applyGain]);
+
+  const muteUser = useCallback((userId) => {
+    // Save current volume BEFORE state update (avoids StrictMode double-run issue)
+    const currentVols = JSON.parse(localStorage.getItem('holyroom_user_volumes') || '{}');
+    prevVolumes.current[userId] = currentVols[userId] ?? 100;
+
+    setMutedUsers((prev) => {
+      const next = new Set(prev);
+      next.add(userId);
+      try { localStorage.setItem('holyroom_muted_users', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    // Apply silence immediately
+    applyGain(userId, 0, true);
+  }, [applyGain]);
+
+  const unmuteUser = useCallback((userId) => {
+    const restored = prevVolumes.current[userId] ?? 100;
+
+    setMutedUsers((prev) => {
+      const next = new Set(prev);
+      next.delete(userId);
+      try { localStorage.setItem('holyroom_muted_users', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    setUserVolumes((prev) => {
+      const next = { ...prev, [userId]: restored };
+      try { localStorage.setItem('holyroom_user_volumes', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    // Restore volume immediately
+    applyGain(userId, restored, false);
+  }, [applyGain]);
 
   const handleNewViewer = useCallback(
     (viewerId, viewerName) => {
@@ -386,6 +510,11 @@ export function useWebRTC(socketRef, quality) {
     isMuted,
     remoteStreams,
     viewingSharers,
+    userVolumes,
+    mutedUsers,
+    setUserVolume,
+    muteUser,
+    unmuteUser,
     startVoiceCapture,
     toggleMute,
     stopSharing,
