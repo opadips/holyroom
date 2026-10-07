@@ -15,7 +15,8 @@
   },
   "scripts": {
     "start": "cross-env HOST=0.0.0.0 react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "test:contrast": "node scripts/contrast-audit.mjs"
   },
   "browserslist": {
     "production": [

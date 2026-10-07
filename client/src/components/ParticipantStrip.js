@@ -1,6 +1,7 @@
 import React from 'react';
 
-const USER_COLORS = ['#7c6bf0', '#6366f1', '#2563eb', '#0891b2', '#a855f7'];
+// White initials are normal-size text — every color keeps ≥4.5:1 (scripts/contrast-audit.mjs)
+const USER_COLORS = ['#5b4ed2', '#4c43c2', '#2563eb', '#0e7490', '#7e22ce'];
 
 function getUserColor(name) {
   let h = 0;
@@ -214,7 +215,7 @@ export default function ParticipantStrip({
             aria-hidden="true"
             style={{
               width: 26, height: 26, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c6bf0, #9d8ff7)',
+              background: 'linear-gradient(135deg, #5b4ed2, #6f60e8)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '0.62rem', fontWeight: 700, color: 'white',
               flexShrink: 0,
@@ -261,7 +262,7 @@ export default function ParticipantStrip({
               position: 'absolute', top: -3, right: -3,
               minWidth: 16, height: 16, padding: '0 4px',
               borderRadius: '999px',
-              background: '#f43f5e',
+              background: '#be123c',
               color: 'white',
               fontSize: '0.6rem', fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -231,7 +231,7 @@ export default function LoginPage({ username, setUsername, joining, handleJoin }
               width: '100%',
               padding: '0.9rem 1.25rem',
               background: canSubmit
-                ? 'linear-gradient(135deg, #6a5adf 0%, #7c6bf0 50%, #8b7af2 100%)'
+                ? 'linear-gradient(135deg, #5b4ed2 0%, #6559dc 50%, #6f60e8 100%)'
                 : 'rgba(124,107,240,0.20)',
               border: '1px solid rgba(157,143,247,0.20)',
               borderRadius: '0.875rem',
@@ -241,7 +241,7 @@ export default function LoginPage({ username, setUsername, joining, handleJoin }
               fontWeight: 600,
               letterSpacing: '0.02em',
               cursor: canSubmit && !joining ? 'pointer' : 'not-allowed',
-              boxShadow: canSubmit ? '0 4px 20px rgba(106,90,223,0.38)' : 'none',
+              boxShadow: canSubmit ? '0 4px 20px rgba(91,78,210,0.38)' : 'none',
               transition: 'all 0.25s ease',
               position: 'relative',
               overflow: 'hidden',

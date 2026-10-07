@@ -60,13 +60,13 @@
   height: 40px;
   border-radius: 0.75rem;
   border: 1px solid rgba(124, 107, 240, 0.20);
-  background: linear-gradient(135deg, #6a5adf 0%, #7c6bf0 50%, #8b7af2 100%);
+  background: linear-gradient(135deg, #5b4ed2 0%, #6559dc 50%, #6f60e8 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(106, 90, 223, 0.35);
+  box-shadow: 0 4px 14px rgba(91, 78, 210, 0.35);
   transition: box-shadow 0.3s ease, opacity 0.2s ease;
   flex-shrink: 0;
 }
@@ -79,7 +79,7 @@
 
 .send-btn--sent,
 .send-btn--delivered {
-  background: linear-gradient(135deg, #059669, #10b981);
+  background: linear-gradient(135deg, #047857, #059669);
   border-color: rgba(16, 185, 129, 0.3);
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.30);
 }
@@ -104,7 +104,7 @@
   position: absolute;
   inset: -4px;
   border-radius: inherit;
-  background: rgba(106, 90, 223, 0.25);
+  background: rgba(91, 78, 210, 0.25);
   filter: blur(8px);
   pointer-events: none;
 }
@@ -354,7 +354,7 @@
 .msg-status__icon { display: block; }
 
 .msg-status__icon--sending   { color: rgba(156, 163, 175, 0.6); }
-.msg-status__icon--sent      { color: rgba(168, 85,  247, 0.7); }
+.msg-status__icon--sent      { color: rgba(168, 85,  247, 0.9); }
 .msg-status__icon--delivered { color: rgba(99,  102, 241, 0.9); }
 
 /* ══════════════════════════════════════════════════════════════

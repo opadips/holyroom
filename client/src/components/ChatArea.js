@@ -3,12 +3,13 @@ import { AnimatePresence } from 'framer-motion';
 import { MessageMotion } from './MotionWrapper';
 import { TypingIndicator, MessageStatus, LoadingSkeleton } from './MicroComponents';
 
+// White initials are normal-size text — every stop keeps ≥4.5:1 (see scripts/contrast-audit.mjs)
 const AVATAR_COLORS = [
-  ['#7c6bf0', '#9d8ff7'],
-  ['#6366f1', '#818cf8'],
-  ['#2563eb', '#60a5fa'],
-  ['#7c3aed', '#a78bfa'],
-  ['#6a5adf', '#8b7af2'],
+  ['#5b4ed2', '#6559dc'],
+  ['#4c43c2', '#5a4fd4'],
+  ['#1d4ed8', '#2563eb'],
+  ['#5b21b6', '#7e22ce'],
+  ['#4c41b8', '#5b4ed2'],
 ];
 
 function getAvatarColors(username) {

@@ -82,7 +82,7 @@ export default function Stage({
           aria-hidden="true"
           style={{
             width: 72, height: 72, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6a5adf, #7c6bf0)',
+            background: 'linear-gradient(135deg, #5b4ed2, #6f60e8)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '1.4rem', fontWeight: 700, color: 'white',
             boxShadow: '0 8px 32px rgba(106,90,223,0.35)',
