@@ -50,6 +50,17 @@ const PRESET_OPTIONS = [
   { key: 'custom', width: 1920, height: 1080, fps: 30, label: 'Custom'      },
 ];
 
+const SHARE_UNSUPPORTED_TITLE =
+  'Screen sharing needs HTTPS or localhost in a supported browser';
+
+function trackQualityLabel(s) {
+  if (!s || !s.height || !s.width) return '';
+  const fps = Math.round(s.frameRate || 0);
+  const byHeight = { 2160: '4K', 1440: '1440p', 1080: '1080p', 720: '720p' };
+  const base = byHeight[s.height] || `${s.width}×${s.height}`;
+  return fps ? `${base} ${fps}fps` : base;
+}
+
 export default function App() {
   const [username, setUsername]               = useState('');
   const [joining, setJoining]                 = useState(false);
@@ -66,6 +77,15 @@ export default function App() {
   const [focusedStream, setFocusedStream]     = useState(null);
   const [focusedSharer, setFocusedSharer]     = useState('');
 
+  // Stage-first layout state
+  const [stageId, setStageId]                 = useState(null);
+  const [chatOpen, setChatOpen]               = useState(true);
+  const [unreadCount, setUnreadCount]         = useState(0);
+  const [micState, setMicState]               = useState('ready'); // insecure|denied|nodevice|ready
+  const [myId, setMyId]                       = useState('');
+  const [liveQualityLabel, setLiveQualityLabel] = useState('');
+  const [qualityHint, setQualityHint]         = useState('');
+
   // sharerId که منتظر stream هستیم
   const pendingFocusRef = useRef(null);
 
@@ -73,19 +93,74 @@ export default function App() {
   const ownVideoRef = useRef(null);
   const videoRefs   = useRef(new Map());
 
+  // Ref mirrors for socket handlers (registered once, must read latest state)
+  const chatOpenRef   = useRef(chatOpen);
+  const focusedIdRef  = useRef(null); // sharer id of focused remote share, or 'own'
+  const viewedRef     = useRef(new Set()); // share ids we currently intend to receive
+  useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
+
   const effectiveQuality =
     qualityPreset === 'custom'
-      ? { ...customQuality, label: 'Custom' }
+      ? { ...customQuality, label: `${customQuality.height}p ${customQuality.fps}fps` }
       : PRESET_OPTIONS.find((p) => p.key === qualityPreset) || PRESET_OPTIONS[0];
 
   const {
     activeSharers, isSharing, localStream, isMuted, remoteStreams,
-    stopSharing, viewShare, startVoiceCapture, toggleMute,
-    handleNewUser, handleNewViewer, handleOffer, handleAnswer, handleIceCandidate,
+    stopSharing, viewShare, unviewShare, hasRecvPC,
+    startVoiceCapture, toggleMute,
+    handleNewUser, handleNewViewer, handleViewerLeft,
+    handleOffer, handleAnswer, handleIceCandidate, handleRecvIceCandidate,
     handleAudioOffer, handleAudioAnswer, handleAudioIceCandidate,
     handleUserStartedSharing, handleUserStoppedSharing,
     setActiveSharers, setLocalStreamManually, setSharingState, reset,
   } = useWebRTC(socketRef, effectiveQuality);
+
+  const shareSupported =
+    typeof navigator !== 'undefined' &&
+    !!navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getDisplayMedia === 'function';
+
+  // ── Stage fallback: staged sharer gone → first other active sharer / null ──
+  useEffect(() => {
+    if (!joined) return;
+    setStageId((prev) => {
+      if (prev && activeSharers.some((s) => s.id === prev)) return prev;
+      const next = activeSharers.find((s) => s.id !== myId);
+      return next ? next.id : null;
+    });
+  }, [activeSharers, joined, myId]);
+
+  // ── Staged-only subscription reconciler ─────────────────────
+  // staged → subscribed; un-staged → unsubscribed.
+  useEffect(() => {
+    if (!joined) return;
+
+    // Unsubscribe shares that are no longer staged
+    viewedRef.current.forEach((id) => {
+      if (id !== stageId) {
+        viewedRef.current.delete(id);
+        unviewShare(id);
+      }
+    });
+
+    // Subscribe the staged share
+    if (stageId && !viewedRef.current.has(stageId)) {
+      viewedRef.current.add(stageId);
+      viewShare(stageId);
+    }
+  }, [joined, stageId, viewShare, unviewShare]);
+
+  // Watchdog: staged share without a live recv PC → re-subscribe (self-heal)
+  useEffect(() => {
+    if (!joined || !stageId) return undefined;
+    const iv = setInterval(() => {
+      if (!hasRecvPC(stageId)) {
+        viewedRef.current.add(stageId);
+        viewShare(stageId);
+      }
+    }, 2500);
+    return () => clearInterval(iv);
+  }, [joined, stageId, hasRecvPC, viewShare]);
 
   // وقتی remoteStreams آپدیت میشه، اگه pending focus داریم باز می‌کنیم
   useEffect(() => {
@@ -96,6 +171,7 @@ export default function App() {
       const sharer = activeSharers.find((s) => s.id === id);
       setFocusedStream(stream);
       setFocusedSharer(sharer?.name ?? '');
+      focusedIdRef.current = id;
       pendingFocusRef.current = null;
     }
   }, [remoteStreams, activeSharers]);
@@ -112,32 +188,54 @@ export default function App() {
 
       socket = io(url);
       socketRef.current = socket;
+      socket.on('connect', () => setMyId(socket.id));
       socket.emit('join', currentUser);
 
       socket.on('messageHistory', setMessages);
-      socket.on('newMessage',     (msg) => setMessages((prev) => [...prev, msg]));
+      socket.on('newMessage',     (msg) => {
+        setMessages((prev) => [...prev, msg]);
+        if (
+          !chatOpenRef.current &&
+          msg.username !== 'System' &&
+          msg.username !== currentUser
+        ) {
+          setUnreadCount((c) => c + 1);
+        }
+      });
       socket.on('userList',       setUsers);
       socket.on('activeSharers',  setActiveSharers);
       socket.on('error',          (err) => { alert(err); setJoined(false); });
       socket.on('userStartedSharing', (sharer) => {
         handleUserStartedSharing(sharer);
-        setNotification(`${sharer.name} is now sharing screen`);
+        setNotification(
+          sharer.id === socket.id
+            ? 'You are now sharing your screen'
+            : `${sharer.name} is now sharing screen`
+        );
       });
       socket.on('userStoppedSharing', (sharer) => {
         handleUserStoppedSharing(sharer);
-        setNotification(`${sharer.name} stopped sharing`);
-        setFocusedStream((prev) => {
-          if (prev && remoteStreams.get(sharer.id) === prev) return null;
-          return prev;
-        });
+        viewedRef.current.delete(sharer.id);
+        if (focusedIdRef.current === sharer.id) {
+          setFocusedStream(null);
+          setFocusedSharer('');
+          focusedIdRef.current = null;
+        }
         if (pendingFocusRef.current === sharer.id) {
           pendingFocusRef.current = null;
         }
+        setNotification(
+          sharer.id === socket.id
+            ? 'You stopped sharing your screen'
+            : `${sharer.name} stopped sharing`
+        );
       });
       socket.on('newViewer',               ({ viewerId, viewerName }) => handleNewViewer(viewerId, viewerName));
+      socket.on('viewerLeft',              ({ viewerId })             => handleViewerLeft(viewerId));
       socket.on('webrtcOffer',             ({ from, offer })          => handleOffer(from, offer));
       socket.on('webrtcAnswer',            ({ from, answer })         => handleAnswer(from, answer));
       socket.on('webrtcIceCandidate',      ({ from, candidate })      => handleIceCandidate(from, candidate));
+      socket.on('webrtcRecvIceCandidate',  ({ from, candidate })      => handleRecvIceCandidate(from, candidate));
       socket.on('newUser',                 (user)                     => handleNewUser(user));
       socket.on('webrtcAudioOffer',        ({ from, offer })          => handleAudioOffer(from, offer));
       socket.on('webrtcAudioAnswer',       ({ from, answer })         => handleAudioAnswer(from, answer));
@@ -154,7 +252,8 @@ export default function App() {
     };
   }, [
     joined, currentUser,
-    handleNewUser, handleNewViewer, handleOffer, handleAnswer, handleIceCandidate,
+    handleNewUser, handleNewViewer, handleViewerLeft,
+    handleOffer, handleAnswer, handleIceCandidate, handleRecvIceCandidate,
     handleAudioOffer, handleAudioAnswer, handleAudioIceCandidate,
     handleUserStartedSharing, handleUserStoppedSharing, setActiveSharers, reset,
   ]);
@@ -171,22 +270,102 @@ export default function App() {
     });
   }, [remoteStreams]);
 
+  // ── Quality chip honesty ────────────────────────────────────
+  // Live label while sharing (track.getSettings), selected preset when idle.
+  useEffect(() => {
+    if (!isSharing || !localStream) {
+      setLiveQualityLabel('');
+      return undefined;
+    }
+    const track = localStream.getVideoTracks()[0];
+    if (!track) return undefined;
+    const read = () => setLiveQualityLabel(trackQualityLabel(track.getSettings()));
+    read();
+    track.addEventListener('unmute', read);
+    return () => track.removeEventListener('unmute', read);
+  }, [isSharing, localStream]);
+
+  // Preset changed mid-share → applyConstraints, hint on failure/mismatch.
+  useEffect(() => {
+    if (!isSharing || !localStream) {
+      setQualityHint('');
+      return undefined;
+    }
+    const track = localStream.getVideoTracks()[0];
+    if (!track) return undefined;
+    let cancelled = false;
+    const want = effectiveQuality;
+    track
+      .applyConstraints({
+        width:  { ideal: want.width },
+        height: { ideal: want.height },
+        frameRate: { ideal: want.fps },
+      })
+      .then(() => {
+        if (cancelled) return;
+        const s = track.getSettings();
+        const mismatch =
+          s.height && want.height && Math.abs(s.height - want.height) / want.height > 0.15;
+        setQualityHint(mismatch ? `Selected ${want.label} applies to the next share` : '');
+      })
+      .catch(() => {
+        if (!cancelled) setQualityHint(`Selected ${want.label} applies to the next share`);
+      });
+    return () => { cancelled = true; };
+  }, [isSharing, localStream, effectiveQuality]);
+
+  // ── Keyboard shortcuts (App level, typing-guarded) ──────────
+  useEffect(() => {
+    if (!joined) return undefined;
+    const isTypingTarget = (t) => {
+      const tag = t?.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!t?.isContentEditable;
+    };
+    const onKey = (e) => {
+      if (e.repeat || isTypingTarget(e.target)) return;
+      if (e.key === 'm' || e.key === 'M') {
+        if (!e.metaKey && !e.ctrlKey && !e.altKey) toggleMute();
+      } else if (e.key === 'Escape') {
+        // Focus overlay owns Escape while open (it registers its own handler)
+        if (document.body.classList.contains('cinematic-focus-open')) return;
+        setChatOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [joined, toggleMute]);
+
   const handleJoin = async (e) => {
     e.preventDefault();
     const clean = username.trim();
     if (!clean) return;
     setJoining(true);
-    try {
-      await startVoiceCapture();
-      setCurrentUser(clean);
-      setJoined(true);
-    } catch {
-      setNotification('Could not access microphone. You can still join, but voice will not work.');
-      setCurrentUser(clean);
-      setJoined(true);
-    } finally {
-      setJoining(false);
+
+    let mic = 'ready';
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      mic = 'insecure'; // skip the attempt entirely
+    } else {
+      try {
+        await startVoiceCapture();
+      } catch (err) {
+        const name = err?.name;
+        mic = (name === 'NotFoundError' || name === 'OverconstrainedError')
+          ? 'nodevice'
+          : 'denied';
+      }
     }
+    setMicState(mic);
+    if (mic === 'insecure') {
+      setNotification('Microphone needs HTTPS or localhost. Joining without voice.');
+    } else if (mic === 'denied') {
+      setNotification('Microphone access denied. You can still join, but voice will not work.');
+    } else if (mic === 'nodevice') {
+      setNotification('No microphone found. You can still join, but voice will not work.');
+    }
+
+    setCurrentUser(clean);
+    setJoined(true);
+    setJoining(false);
   };
 
   const handleLeave = () => {
@@ -198,11 +377,17 @@ export default function App() {
     setUsers([]);
     setFocusedStream(null);
     setFocusedSharer('');
+    focusedIdRef.current = null;
     pendingFocusRef.current = null;
+    viewedRef.current.clear();
+    setStageId(null);
+    setChatOpen(true);
+    setUnreadCount(0);
+    setQualityHint('');
   };
 
   const startSharingWithQuality = async () => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !shareSupported) return;
     const q = effectiveQuality;
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -213,6 +398,7 @@ export default function App() {
           cursor: 'always',
         },
         audio: true,
+        selfBrowserSurface: 'exclude',
       });
       setLocalStreamManually(stream);
       socketRef.current.emit('startScreenShare');
@@ -223,9 +409,8 @@ export default function App() {
     }
   };
 
-  // برای remote streams:
-  // اگه stream از قبل آماده‌ست مستقیم باز کن
-  // اگه نه، viewShare صدا بزن و منتظر remoteStreams آپدیت بمون
+  // Stage expand → CinematicFocus over an already-subscribed stream.
+  // If the stream isn't there yet, stage it; pendingFocus opens focus when it lands.
   const handleOpenFocus = useCallback((sharerId) => {
     const existing = remoteStreams.get(sharerId);
     const sharer   = activeSharers.find((s) => s.id === sharerId);
@@ -233,21 +418,40 @@ export default function App() {
     if (existing) {
       setFocusedStream(existing);
       setFocusedSharer(sharer?.name ?? '');
+      focusedIdRef.current = sharerId;
     } else {
-      // stream هنوز نیومده — viewShare بزن و منتظر بمون
       pendingFocusRef.current = sharerId;
-      viewShare(sharerId);
+      setStageId(sharerId);
     }
-  }, [remoteStreams, activeSharers, viewShare]);
+  }, [remoteStreams, activeSharers]);
 
   // برای own stream
   const handleOpenOwnFocus = useCallback(() => {
     if (!localStream) return;
     setFocusedStream(localStream);
     setFocusedSharer(currentUser);
+    focusedIdRef.current = 'own';
   }, [localStream, currentUser]);
 
-  const otherUsers = users.filter((u) => u.id !== socketRef.current?.id);
+  const handleCloseFocus = useCallback(() => {
+    setFocusedStream(null);
+    setFocusedSharer('');
+    focusedIdRef.current = null;
+  }, []);
+
+  const handleStageSelect = useCallback((id) => {
+    setStageId(id);
+  }, []);
+
+  const handleToggleChat = useCallback(() => {
+    setChatOpen((prev) => {
+      if (!prev) setUnreadCount(0); // clearing on open
+      return !prev;
+    });
+  }, []);
+
+  const otherUsers = users.filter((u) => u.id !== myId);
+  const currentLabel = liveQualityLabel || effectiveQuality.label;
 
   return (
     <>
@@ -269,20 +473,30 @@ export default function App() {
             <MainLayout
               currentUser={currentUser}
               usersCount={users.length}
-              onSettingsClick={() => setSettingsOpen((prev) => !prev)}
               onLeave={handleLeave}
               otherUsers={otherUsers}
               connectionStatuses={connectionStatuses}
               activeSharers={activeSharers}
+              socketId={myId}
               isSharing={isSharing}
-              onViewShare={handleOpenFocus}
+              stageId={stageId}
+              onStageSelect={handleStageSelect}
+              chatOpen={chatOpen}
+              unreadCount={unreadCount}
+              onToggleChat={handleToggleChat}
               onStartShare={startSharingWithQuality}
               onStopShare={stopSharing}
+              shareSupported={shareSupported}
+              shareDisabledTitle={SHARE_UNSUPPORTED_TITLE}
+              qualityLabel={currentLabel}
+              qualityTitle={qualityHint || `Share quality: ${currentLabel}`}
+              onOpenSettings={() => setSettingsOpen(true)}
               messages={messages}
               input={input}
               setInput={setInput}
               isMuted={isMuted}
               onToggleMute={toggleMute}
+              micState={micState}
               onSend={(e) => {
                 e.preventDefault();
                 if (input.trim() && socketRef.current) {
@@ -294,7 +508,6 @@ export default function App() {
               remoteStreams={remoteStreams}
               ownVideoRef={ownVideoRef}
               videoRefs={videoRefs}
-              socketId={socketRef.current?.id}
               onFullscreen={handleOpenFocus}
               onOwnFullscreen={handleOpenOwnFocus}
             />
@@ -323,10 +536,8 @@ export default function App() {
             key="cinematic-focus"
             stream={focusedStream}
             sharerName={focusedSharer}
-            onClose={() => {
-              setFocusedStream(null);
-              setFocusedSharer('');
-            }}
+            muted={focusedIdRef.current === 'own'}
+            onClose={handleCloseFocus}
             isMuted={isMuted}
             onToggleMute={toggleMute}
           />

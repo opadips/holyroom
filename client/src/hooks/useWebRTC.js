@@ -5,8 +5,15 @@ const servers = {
 };
 
 export function useWebRTC(socketRef, quality) {
-  const peerConnections = useRef(new Map());
+  // Screen sharing — split by direction so stopSharing() can close only the
+  // PCs where this client is the SHARER, never its own view of someone else.
+  const screenSendPCs = useRef(new Map()); // I am the sharer -> viewers (carries local tracks)
+  const screenRecvPCs = useRef(new Map()); // viewer me <- sharer (receive-only)
   const audioPeerConnections = useRef(new Map());
+  // Shares this client currently WANTS to receive — gates handleOffer so a
+  // late offer after unviewShare cannot silently re-subscribe.
+  const viewingIntent = useRef(new Set());
+
   const [activeSharers, setActiveSharers] = useState([]);
   const [isSharing, setIsSharing] = useState(false);
   const [remoteStreams, setRemoteStreams] = useState(new Map());
@@ -18,20 +25,21 @@ export function useWebRTC(socketRef, quality) {
   const isMutedRef = useRef(false);
   const audioElements = useRef(new Map());
 
-  const createPeerConnection = useCallback(
-    (partnerId) => {
+  // ── Screen: sharer -> viewer (send) ─────────────────────────
+  const createSendPC = useCallback(
+    (viewerId) => {
       const pc = new RTCPeerConnection(servers);
       pc.onicecandidate = (event) => {
         if (event.candidate && socketRef.current) {
           socketRef.current.emit('webrtcIceCandidate', {
-            to: partnerId,
+            to: viewerId,
             candidate: event.candidate,
           });
         }
       };
       pc.onconnectionstatechange = () => {
         if (socketRef.current) {
-          socketRef.current.emit('connectionStatus', { id: partnerId, status: pc.connectionState });
+          socketRef.current.emit('connectionStatus', { id: viewerId, status: pc.connectionState });
         }
         if (
           pc.connectionState === 'disconnected' ||
@@ -39,18 +47,7 @@ export function useWebRTC(socketRef, quality) {
           pc.connectionState === 'closed'
         ) {
           pc.close();
-          peerConnections.current.delete(partnerId);
-          setRemoteStreams((prev) => {
-            const next = new Map(prev);
-            next.delete(partnerId);
-            return next;
-          });
-        }
-      };
-      pc.ontrack = (event) => {
-        const [stream] = event.streams;
-        if (stream) {
-          setRemoteStreams((prev) => new Map(prev).set(partnerId, stream));
+          screenSendPCs.current.delete(viewerId);
         }
       };
       if (localStreamRef.current) {
@@ -58,12 +55,258 @@ export function useWebRTC(socketRef, quality) {
           pc.addTrack(track, localStreamRef.current);
         });
       }
-      peerConnections.current.set(partnerId, pc);
+      screenSendPCs.current.set(viewerId, pc);
       return pc;
     },
     [socketRef]
   );
 
+  // ── Screen: viewer <- sharer (recv, receive-only) ───────────
+  const createRecvPC = useCallback(
+    (sharerId) => {
+      const pc = new RTCPeerConnection(servers);
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socketRef.current) {
+          socketRef.current.emit('webrtcRecvIceCandidate', {
+            to: sharerId,
+            candidate: event.candidate,
+          });
+        }
+      };
+      pc.ontrack = (event) => {
+        const [stream] = event.streams;
+        if (stream) {
+          setRemoteStreams((prev) => new Map(prev).set(sharerId, stream));
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if (socketRef.current) {
+          socketRef.current.emit('connectionStatus', { id: sharerId, status: pc.connectionState });
+        }
+        if (
+          pc.connectionState === 'disconnected' ||
+          pc.connectionState === 'failed' ||
+          pc.connectionState === 'closed'
+        ) {
+          pc.close();
+          screenRecvPCs.current.delete(sharerId);
+          setRemoteStreams((prev) => {
+            if (!prev.has(sharerId)) return prev;
+            const next = new Map(prev);
+            next.delete(sharerId);
+            return next;
+          });
+        }
+      };
+      screenRecvPCs.current.set(sharerId, pc);
+      return pc;
+    },
+    [socketRef]
+  );
+
+  const startVoiceCapture = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      localAudioStreamRef.current = stream;
+      setLocalAudioStream(stream);
+      isMutedRef.current = false;
+      setIsMuted(false);
+      return stream;
+    } catch (err) {
+      console.error('Microphone access denied', err);
+      throw err;
+    }
+  }, []);
+
+  const stopVoiceCapture = useCallback(() => {
+    if (localAudioStreamRef.current) {
+      localAudioStreamRef.current.getTracks().forEach((track) => track.stop());
+      localAudioStreamRef.current = null;
+      setLocalAudioStream(null);
+    }
+    audioPeerConnections.current.forEach((pc) => pc.close());
+    audioPeerConnections.current.clear();
+    audioElements.current.forEach((audio) => {
+      audio.srcObject = null;
+    });
+    audioElements.current.clear();
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    if (localAudioStreamRef.current) {
+      const enabled = !isMutedRef.current;
+      localAudioStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = !enabled;
+      });
+      isMutedRef.current = enabled;
+      setIsMuted(enabled);
+    }
+  }, []);
+
+  // Stops MY outgoing share only — PCs where I am viewing someone else survive.
+  const stopSharing = useCallback(() => {
+    if (!socketRef.current) return;
+    socketRef.current.emit('stopScreenShare');
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+    }
+    screenSendPCs.current.forEach((pc) => pc.close());
+    screenSendPCs.current.clear();
+    setIsSharing(false);
+    setLocalStream(null);
+  }, [socketRef]);
+
+  const viewShare = useCallback(
+    (sharerId) => {
+      if (!socketRef.current) return;
+      viewingIntent.current.add(sharerId);
+      socketRef.current.emit('joinScreenShare', { sharerId });
+    },
+    [socketRef]
+  );
+
+  const unviewShare = useCallback(
+    (sharerId) => {
+      viewingIntent.current.delete(sharerId);
+      if (socketRef.current) {
+        socketRef.current.emit('leaveScreenShare', { sharerId });
+      }
+      const pc = screenRecvPCs.current.get(sharerId);
+      if (pc) {
+        pc.close();
+        screenRecvPCs.current.delete(sharerId);
+      }
+      setRemoteStreams((prev) => {
+        if (!prev.has(sharerId)) return prev;
+        const next = new Map(prev);
+        next.delete(sharerId);
+        return next;
+      });
+    },
+    [socketRef]
+  );
+
+  const hasRecvPC = useCallback((sharerId) => screenRecvPCs.current.has(sharerId), []);
+
+  // ── Screen: sharer side ─────────────────────────────────────
+  const handleNewViewer = useCallback(
+    (viewerId, viewerName) => {
+      // Idempotent: a repeated joinScreenShare (A->B->A switch) means any
+      // existing PC for this viewer is stale — close it before recreating.
+      const existing = screenSendPCs.current.get(viewerId);
+      if (existing) {
+        existing.close();
+        screenSendPCs.current.delete(viewerId);
+      }
+      const pc = createSendPC(viewerId);
+      pc.createOffer()
+        .then((offer) => pc.setLocalDescription(offer))
+        .then(() => {
+          if (socketRef.current) {
+            socketRef.current.emit('webrtcOffer', {
+              to: viewerId,
+              offer: pc.localDescription,
+            });
+          }
+        })
+        .catch(console.error);
+    },
+    [socketRef, createSendPC]
+  );
+
+  const handleViewerLeft = useCallback((viewerId) => {
+    const pc = screenSendPCs.current.get(viewerId);
+    if (pc) {
+      pc.close();
+      screenSendPCs.current.delete(viewerId);
+    }
+  }, []);
+
+  // ── Screen: viewer side ─────────────────────────────────────
+  const handleOffer = useCallback(
+    (from, offer) => {
+      // Drop offers for shares we no longer want (offer-after-leave race).
+      if (!viewingIntent.current.has(from)) return;
+      // An offer only ever originates from a fresh newViewer, so any existing
+      // recv PC here is stale — close and recreate to stay idempotent.
+      const existing = screenRecvPCs.current.get(from);
+      if (existing) {
+        existing.close();
+        screenRecvPCs.current.delete(from);
+      }
+      const pc = createRecvPC(from);
+      pc.setRemoteDescription(new RTCSessionDescription(offer))
+        .then(() => pc.createAnswer())
+        .then((answer) => pc.setLocalDescription(answer))
+        .then(() => {
+          if (socketRef.current) {
+            socketRef.current.emit('webrtcAnswer', {
+              to: from,
+              answer: pc.localDescription,
+            });
+          }
+        })
+        .catch(console.error);
+    },
+    [socketRef, createRecvPC]
+  );
+
+  // Answer arrives at the SHARER (send PC).
+  const handleAnswer = useCallback((from, answer) => {
+    const pc = screenSendPCs.current.get(from);
+    if (pc && pc.signalingState === 'have-local-offer') {
+      pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(console.error);
+    }
+  }, []);
+
+  // ICE from the sharer -> my recv PC.
+  const handleIceCandidate = useCallback((from, candidate) => {
+    const pc = screenRecvPCs.current.get(from);
+    if (pc) {
+      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
+    }
+  }, []);
+
+  // ICE from a viewer -> my send PC to that viewer.
+  const handleRecvIceCandidate = useCallback((from, candidate) => {
+    const pc = screenSendPCs.current.get(from);
+    if (pc) {
+      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
+    }
+  }, []);
+
+  const handleUserStartedSharing = useCallback((sharer) => {
+    setActiveSharers((prev) => {
+      const exists = prev.find((s) => s.id === sharer.id);
+      return exists ? prev : [...prev, sharer];
+    });
+  }, []);
+
+  const handleUserStoppedSharing = useCallback((sharer) => {
+    setActiveSharers((prev) => prev.filter((s) => s.id !== sharer.id));
+    viewingIntent.current.delete(sharer.id);
+    const pc = screenRecvPCs.current.get(sharer.id);
+    if (pc) {
+      pc.close();
+      screenRecvPCs.current.delete(sharer.id);
+    }
+    setRemoteStreams((prev) => {
+      if (!prev.has(sharer.id)) return prev;
+      const next = new Map(prev);
+      next.delete(sharer.id);
+      return next;
+    });
+  }, []);
+
+  // ── Voice mesh (unchanged) ──────────────────────────────────
   const createAudioPeerConnection = useCallback(
     (partnerId) => {
       const pc = new RTCPeerConnection(servers);
@@ -117,149 +360,6 @@ export function useWebRTC(socketRef, quality) {
     },
     [socketRef]
   );
-
-  const startVoiceCapture = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      localAudioStreamRef.current = stream;
-      setLocalAudioStream(stream);
-      isMutedRef.current = false;
-      setIsMuted(false);
-      return stream;
-    } catch (err) {
-      console.error('Microphone access denied', err);
-      throw err;
-    }
-  }, []);
-
-  const stopVoiceCapture = useCallback(() => {
-    if (localAudioStreamRef.current) {
-      localAudioStreamRef.current.getTracks().forEach((track) => track.stop());
-      localAudioStreamRef.current = null;
-      setLocalAudioStream(null);
-    }
-    audioPeerConnections.current.forEach((pc) => pc.close());
-    audioPeerConnections.current.clear();
-    audioElements.current.forEach((audio) => {
-      audio.srcObject = null;
-    });
-    audioElements.current.clear();
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    if (localAudioStreamRef.current) {
-      const enabled = !isMutedRef.current;
-      localAudioStreamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = !enabled;
-      });
-      isMutedRef.current = enabled;
-      setIsMuted(enabled);
-    }
-  }, []);
-
-  const stopSharing = useCallback(() => {
-    if (!socketRef.current) return;
-    socketRef.current.emit('stopScreenShare');
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
-      localStreamRef.current = null;
-    }
-    peerConnections.current.forEach((pc) => pc.close());
-    peerConnections.current.clear();
-    setIsSharing(false);
-    setLocalStream(null);
-    setRemoteStreams(new Map());
-  }, [socketRef]);
-
-  const viewShare = useCallback(
-    (sharerId) => {
-      if (!socketRef.current) return;
-      socketRef.current.emit('joinScreenShare', { sharerId });
-    },
-    [socketRef]
-  );
-
-  const handleNewViewer = useCallback(
-    (viewerId, viewerName) => {
-      const pc = createPeerConnection(viewerId);
-      pc.createOffer()
-        .then((offer) => pc.setLocalDescription(offer))
-        .then(() => {
-          if (socketRef.current) {
-            socketRef.current.emit('webrtcOffer', {
-              to: viewerId,
-              offer: pc.localDescription,
-            });
-          }
-        })
-        .catch(console.error);
-    },
-    [socketRef, createPeerConnection]
-  );
-
-  const handleOffer = useCallback(
-    (from, offer) => {
-      let pc = peerConnections.current.get(from);
-      if (!pc) {
-        pc = createPeerConnection(from);
-      }
-      pc.setRemoteDescription(new RTCSessionDescription(offer))
-        .then(() => pc.createAnswer())
-        .then((answer) => pc.setLocalDescription(answer))
-        .then(() => {
-          if (socketRef.current) {
-            socketRef.current.emit('webrtcAnswer', {
-              to: from,
-              answer: pc.localDescription,
-            });
-          }
-        })
-        .catch(console.error);
-    },
-    [socketRef, createPeerConnection]
-  );
-
-  const handleAnswer = useCallback((from, answer) => {
-    const pc = peerConnections.current.get(from);
-    if (pc && pc.signalingState === 'have-local-offer') {
-      pc.setRemoteDescription(new RTCSessionDescription(answer)).catch(console.error);
-    }
-  }, []);
-
-  const handleIceCandidate = useCallback((from, candidate) => {
-    const pc = peerConnections.current.get(from);
-    if (pc) {
-      pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
-    }
-  }, []);
-
-  const handleUserStartedSharing = useCallback((sharer) => {
-    setActiveSharers((prev) => {
-      const exists = prev.find((s) => s.id === sharer.id);
-      return exists ? prev : [...prev, sharer];
-    });
-  }, []);
-
-  const handleUserStoppedSharing = useCallback((sharer) => {
-    setActiveSharers((prev) => prev.filter((s) => s.id !== sharer.id));
-    const pc = peerConnections.current.get(sharer.id);
-    if (pc) {
-      pc.close();
-      peerConnections.current.delete(sharer.id);
-    }
-    setRemoteStreams((prev) => {
-      const next = new Map(prev);
-      next.delete(sharer.id);
-      return next;
-    });
-  }, []);
 
   const handleNewUser = useCallback(
     (user) => {
@@ -322,14 +422,17 @@ export function useWebRTC(socketRef, quality) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
     }
-    peerConnections.current.forEach((pc) => pc.close());
-    peerConnections.current.clear();
+    screenSendPCs.current.forEach((pc) => pc.close());
+    screenSendPCs.current.clear();
+    screenRecvPCs.current.forEach((pc) => pc.close());
+    screenRecvPCs.current.clear();
     audioPeerConnections.current.forEach((pc) => pc.close());
     audioPeerConnections.current.clear();
     audioElements.current.forEach((audio) => {
       audio.srcObject = null;
     });
     audioElements.current.clear();
+    viewingIntent.current.clear();
     setActiveSharers([]);
     setIsSharing(false);
     setLocalStream(null);
@@ -357,11 +460,15 @@ export function useWebRTC(socketRef, quality) {
     toggleMute,
     stopSharing,
     viewShare,
+    unviewShare,
+    hasRecvPC,
     handleNewUser,
     handleNewViewer,
+    handleViewerLeft,
     handleOffer,
     handleAnswer,
     handleIceCandidate,
+    handleRecvIceCandidate,
     handleAudioOffer,
     handleAudioAnswer,
     handleAudioIceCandidate,

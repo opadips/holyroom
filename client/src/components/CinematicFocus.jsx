@@ -4,7 +4,7 @@ import './CinematicFocus.css';
 
 const springConfig = { stiffness: 80, damping: 22, mass: 1.1 };
 
-export default function CinematicFocus({ stream, onClose, sharerName = '', isMuted = false, onToggleMute }) {
+export default function CinematicFocus({ stream, onClose, sharerName = '', isMuted = false, onToggleMute, muted = false }) {
   const containerRef    = useRef(null);
   const [phase, setPhase]             = useState('entering');
   const [tiltEnabled, setTiltEnabled] = useState(false);
@@ -50,7 +50,6 @@ export default function CinematicFocus({ stream, onClose, sharerName = '', isMut
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') handleClose();
-      if (e.key === 'm' || e.key === 'M') onToggleMute?.();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -137,7 +136,7 @@ export default function CinematicFocus({ stream, onClose, sharerName = '', isMut
           className="cf-video"
           autoPlay
           playsInline
-          muted={false}
+          muted={muted}
         />
 
         <div className="cf-bracket cf-bracket--tl" />

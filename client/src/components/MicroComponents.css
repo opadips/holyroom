@@ -256,6 +256,13 @@
 
 .stream-btn__label { line-height: 1; }
 
+/* <sm: dock space is tight — share collapses to icon-only (aria-label kept) */
+@media (max-width: 639.98px) {
+  .stream-btn { padding: 0.5rem 0.65rem; }
+  .stream-btn__label { display: none; }
+  .dock-quality-label { display: none; }
+}
+
 /* rotating border sweep when active */
 .stream-btn__border-sweep {
   position: absolute;

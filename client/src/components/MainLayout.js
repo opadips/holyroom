@@ -1,81 +1,117 @@
 import React from 'react';
-import Header from './Header';
-import Sidebar from './Sidebar';
-import ChatArea from './ChatArea';
-import InputBar from './InputBar';
-import ScreenShareBar from './ScreenShareBar';
+import ParticipantStrip from './ParticipantStrip';
+import Stage from './Stage';
+import ChatRail from './ChatRail';
+import ControlDock from './ControlDock';
 
 export default function MainLayout({
-  currentUser, usersCount, onSettingsClick, onLeave,
-  otherUsers, connectionStatuses, activeSharers, isSharing,
-  onViewShare, onStartShare, onStopShare,
-  messages, input, setInput, isMuted, onToggleMute, onSend,
-  localStream, remoteStreams, ownVideoRef, videoRefs, socketId,
-  onFullscreen, onOwnFullscreen,
-  speakingUsers = [], audioStreams = new Map(), typingUsers = [],
+  currentUser,
+  usersCount,
+  otherUsers,
+  connectionStatuses,
+  activeSharers,
+  socketId,
+  isSharing,
+
+  stageId,
+  onStageSelect,
+
+  chatOpen,
+  unreadCount,
+  onToggleChat,
+
+  messages,
+  input,
+  setInput,
+  onSend,
+  typingUsers = [],
+
+  isMuted,
+  onToggleMute,
+  micState,
+  onStartShare,
+  onStopShare,
+  shareSupported,
+  shareDisabledTitle,
+  qualityLabel,
+  qualityTitle,
+  onOpenSettings,
+  onLeave,
+
+  localStream,
+  remoteStreams,
+  ownVideoRef,
+  videoRefs,
+  onFullscreen,
+  onOwnFullscreen,
 }) {
+  const stagedSharer = activeSharers.find((s) => s.id === stageId);
+
   return (
     <div className="flex flex-col h-screen relative z-10 overflow-hidden">
-      <Header
+      <ParticipantStrip
         currentUser={currentUser}
+        otherUsers={otherUsers}
         usersCount={usersCount}
-        onSettingsClick={onSettingsClick}
-        onLeave={onLeave}
+        connectionStatuses={connectionStatuses}
+        activeSharers={activeSharers}
+        socketId={socketId}
+        isSharing={isSharing}
+        stageId={stageId}
+        onStageSelect={onStageSelect}
+        chatOpen={chatOpen}
+        unreadCount={unreadCount}
+        onToggleChat={onToggleChat}
       />
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          otherUsers={otherUsers}
-          connectionStatuses={connectionStatuses}
-          activeSharers={activeSharers}
-          isSharing={isSharing}
-          onViewShare={onViewShare}
-          onStartShare={onStartShare}
-          onStopShare={onStopShare}
-          speakingUsers={speakingUsers}
-          audioStreams={audioStreams}
-        />
-
-        <main className="flex flex-col flex-1 overflow-hidden">
-          {/* Screen share strip */}
-          <ScreenShareBar
-            activeSharers={activeSharers}
+      <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
+        {/* Stage column — dock floats over the stage, never over the rail */}
+        <div style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex' }}>
+          <Stage
+            stageId={stageId}
+            sharerName={stagedSharer?.name ?? ''}
             remoteStreams={remoteStreams}
-            localStream={localStream}
-            isSharing={isSharing}
-            currentUser={currentUser}
             videoRefs={videoRefs}
+            activeSharers={activeSharers}
+            isSharing={isSharing}
+            localStream={localStream}
             ownVideoRef={ownVideoRef}
-            socketId={socketId}
-            onFullscreen={onFullscreen}
-            onOwnFullscreen={onOwnFullscreen}
+            currentUser={currentUser}
+            onExpand={stageId ? () => onFullscreen?.(stageId) : undefined}
+            onOwnExpand={onOwnFullscreen}
           />
-
-          {/* Chat channel header */}
-          <div style={{
-            padding: '0.6rem 1.25rem',
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            borderBottom: '1px solid rgba(124,107,240,0.07)',
-            background: 'rgba(8,8,20,0.40)',
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--tx-ghost)', flexShrink: 0 }}>
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            <span style={{ color: 'var(--tx-tertiary)', fontSize: '0.8rem', fontWeight: 500 }}>general</span>
-            <div style={{ flex: 1 }} />
-            <span style={{ color: 'var(--tx-ghost)', fontSize: '0.72rem' }}>{messages.length} messages</span>
-          </div>
-
-          <ChatArea messages={messages} typingUsers={typingUsers} />
-
-          <InputBar
-            input={input}
-            setInput={setInput}
+          <ControlDock
             isMuted={isMuted}
             onToggleMute={onToggleMute}
-            onSend={onSend}
+            micState={micState}
+            isSharing={isSharing}
+            onStartShare={onStartShare}
+            onStopShare={onStopShare}
+            shareSupported={shareSupported}
+            shareDisabledTitle={shareDisabledTitle}
+            qualityLabel={qualityLabel}
+            qualityTitle={qualityTitle}
+            onOpenSettings={onOpenSettings}
+            onLeave={onLeave}
           />
-        </main>
+        </div>
+
+        {/* Chat rail — static column at lg+, overlay drawer below */}
+        {chatOpen && (
+          <>
+            <div className="rail-backdrop" onClick={onToggleChat} aria-hidden="true" />
+            <div className="rail-host">
+              <ChatRail
+                messages={messages}
+                input={input}
+                setInput={setInput}
+                onSend={onSend}
+                typingUsers={typingUsers}
+                onCollapse={onToggleChat}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

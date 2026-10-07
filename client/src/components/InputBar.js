@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { MuteButton, SendButton, AnimatedBorder } from './MicroComponents';
+import { SendButton, AnimatedBorder } from './MicroComponents';
 import { useMessageParticle, ParticleCanvas } from './MessageParticle';
 
-export default function InputBar({ input, setInput, isMuted, onToggleMute, onSend }) {
+export default function InputBar({ input, setInput, onSend }) {
   const [focused, setFocused] = useState(false);
   const sendBtnRef = useRef(null);
   const { canvasRef, spawnParticles } = useMessageParticle();
@@ -16,9 +16,7 @@ export default function InputBar({ input, setInput, isMuted, onToggleMute, onSen
   return (
     <>
       <ParticleCanvas canvasRef={canvasRef} />
-      <div className="panel-footer flex items-center gap-2.5 relative z-10" style={{ padding: '0.75rem 1rem' }}>
-        <MuteButton isMuted={isMuted} onToggle={onToggleMute} />
-
+      <div className="panel-footer flex items-center gap-2.5 relative z-10" style={{ padding: '0.75rem 1rem', flexShrink: 0 }}>
         <AnimatedBorder isActive={focused} color="purple" className="flex flex-1 gap-2 rounded-xl">
           <div className="flex flex-1 gap-2 p-1">
             <input
@@ -31,6 +29,7 @@ export default function InputBar({ input, setInput, isMuted, onToggleMute, onSen
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
               }}
               placeholder="Send a message…"
+              aria-label="Message"
               style={{
                 flex: 1,
                 background: 'transparent',

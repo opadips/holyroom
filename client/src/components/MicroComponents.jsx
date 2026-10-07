@@ -191,7 +191,7 @@ export function VoiceBar({ stream, isMuted, barCount = 4 }) {
 //
 // <MuteButton isMuted={isMuted} onToggle={toggleMute} />
 // ─────────────────────────────────────────────────────────────
-export function MuteButton({ isMuted, onToggle }) {
+export function MuteButton({ isMuted, onToggle, disabled = false, title = '' }) {
   const { ref: magnetRef } = useMagneticHover({ strength: 0.18, radius: 50 });
   const { ref: rippleRef, ripples, triggerRipple } = useRipple({
     color: isMuted
@@ -208,11 +208,14 @@ export function MuteButton({ isMuted, onToggle }) {
     <motion.button
       ref={setRef}
       className={`mute-btn ${isMuted ? 'mute-btn--muted' : 'mute-btn--active'}`}
-      onClick={(e) => { triggerRipple(e); onToggle?.(); }}
-      whileHover={{ scale: 1.08 }}
-      whileTap={{   scale: 0.91 }}
+      onClick={(e) => { if (disabled) return; triggerRipple(e); onToggle?.(); }}
+      whileHover={disabled ? {} : { scale: 1.08 }}
+      whileTap={disabled ? {} : { scale: 0.91 }}
       transition={spring.snap}
       aria-label={isMuted ? 'Unmute' : 'Mute'}
+      aria-disabled={disabled || undefined}
+      title={title || undefined}
+      style={disabled ? { opacity: 0.55, cursor: 'not-allowed' } : undefined}
     >
       <span className="mute-btn__ripple-container" aria-hidden="true">
         {ripples}
@@ -248,7 +251,7 @@ export function MuteButton({ isMuted, onToggle }) {
 //   onStop={stopSharing}
 // />
 // ─────────────────────────────────────────────────────────────
-export function StreamToggleButton({ isSharing, onStart, onStop }) {
+export function StreamToggleButton({ isSharing, onStart, onStop, disabled = false, title = '' }) {
   const { streamState, activate, deactivate } = useStreamActivation();
   const { ref: rippleRef, ripples, triggerRipple } = useRipple({
     color: isSharing
@@ -257,6 +260,7 @@ export function StreamToggleButton({ isSharing, onStart, onStop }) {
   });
 
   const handleClick = (e) => {
+    if (disabled) return;
     triggerRipple(e);
     if (isSharing) {
       deactivate(onStop);
@@ -279,10 +283,13 @@ export function StreamToggleButton({ isSharing, onStart, onStop }) {
         streamState === 'activating' || streamState === 'deactivating' ? 'stream-btn--transitioning' : ''
       }`}
       onClick={handleClick}
-      whileHover={{ scale: 1.03 }}
-      whileTap={{   scale: 0.96 }}
+      whileHover={disabled ? {} : { scale: 1.03 }}
+      whileTap={disabled ? {} : { scale: 0.96 }}
       transition={spring.snap}
       aria-label={label}
+      aria-disabled={disabled || undefined}
+      title={disabled ? title : undefined}
+      style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
     >
       <span className="stream-btn__ripple-container" aria-hidden="true">
         {ripples}

@@ -60,6 +60,7 @@ const io = new Server(server, {
 const users = new Map();
 const messages = [];
 const sharers = new Map();
+const viewers = new Map(); // sharerId -> Set(viewerId)
 
 io.on('connection', (socket) => {
   socket.on('join', (username) => {
@@ -109,13 +110,26 @@ io.on('connection', (socket) => {
 
   socket.on('stopScreenShare', () => {
     sharers.delete(socket.id);
+    viewers.delete(socket.id);
     io.emit('userStoppedSharing', { id: socket.id, name: socket.username });
   });
 
   socket.on('joinScreenShare', ({ sharerId }) => {
+    if (!sharers.has(sharerId)) return; // not actually sharing
     const sharerSocket = io.sockets.sockets.get(sharerId);
     if (sharerSocket) {
+      if (!viewers.has(sharerId)) viewers.set(sharerId, new Set());
+      viewers.get(sharerId).add(socket.id);
       sharerSocket.emit('newViewer', { viewerId: socket.id, viewerName: socket.username });
+    }
+  });
+
+  socket.on('leaveScreenShare', ({ sharerId }) => {
+    if (!sharers.has(sharerId)) return;
+    viewers.get(sharerId)?.delete(socket.id);
+    const sharerSocket = io.sockets.sockets.get(sharerId);
+    if (sharerSocket) {
+      sharerSocket.emit('viewerLeft', { viewerId: socket.id });
     }
   });
 
@@ -137,6 +151,14 @@ io.on('connection', (socket) => {
     const targetSocket = io.sockets.sockets.get(to);
     if (targetSocket) {
       targetSocket.emit('webrtcIceCandidate', { from: socket.id, candidate: candidate });
+    }
+  });
+
+  // ICE from a viewer's recv PC -> the sharer's send PC for that viewer
+  socket.on('webrtcRecvIceCandidate', ({ to, candidate }) => {
+    const targetSocket = io.sockets.sockets.get(to);
+    if (targetSocket) {
+      targetSocket.emit('webrtcRecvIceCandidate', { from: socket.id, candidate: candidate });
     }
   });
 
@@ -164,6 +186,18 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     if (socket.username) {
       users.delete(socket.id);
+
+      // Notify sharers this socket was viewing so they stop encoding to a dead PC
+      viewers.forEach((set, sharerId) => {
+        if (set.delete(socket.id)) {
+          const sharerSocket = io.sockets.sockets.get(sharerId);
+          if (sharerSocket) {
+            sharerSocket.emit('viewerLeft', { viewerId: socket.id });
+          }
+        }
+      });
+      viewers.delete(socket.id);
+
       io.emit('userList', Array.from(users.entries()).map(([id, name]) => ({ id, name })));
       if (sharers.has(socket.id)) {
         sharers.delete(socket.id);

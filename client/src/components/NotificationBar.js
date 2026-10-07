@@ -31,7 +31,7 @@ export default function NotificationBar({ message, onClose }) {
         <motion.div
           key={message}
           style={{
-            position: 'fixed', top: '1rem', left: '50%', transform: 'translateX(-50%)',
+            position: 'fixed', top: '4.75rem', left: '50%', transform: 'translateX(-50%)',
             zIndex: 40, display: 'flex', alignItems: 'center',
           }}
           initial={{ opacity: 0, y: -14, scale: 0.95, filter: 'blur(6px)' }}

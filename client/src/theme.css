@@ -90,6 +90,8 @@
   --z-base:         10;
   --z-sidebar:      20;
   --z-overlay:      30;
+  --z-dock:         30;
+  --z-rail-overlay: 35;
   --z-notification: 40;
   --z-fullscreen:   50;
   --z-modal:        60;
