@@ -93,7 +93,14 @@ export default function CinematicFocus({ stream, onClose, sharerName = '', isMut
   const isExiting = phase === 'exiting';
 
   return (
-    <div className="cf-root" onClick={handleClose} onMouseMove={handleMouseMove}>
+    <div
+      className="cf-root"
+      onClick={handleClose}
+      onMouseMove={handleMouseMove}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Fullscreen screen share${sharerName ? ` — ${sharerName}` : ''}`}
+    >
 
       <motion.div
         className="cf-backdrop"

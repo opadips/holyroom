@@ -26,7 +26,8 @@ export default function NotificationBar({ message, onClose }) {
   const cfg = TYPE_CONFIG[type] || TYPE_CONFIG.info;
 
   return (
-    <AnimatePresence>
+    <div role="status" aria-live="polite">
+      <AnimatePresence>
       {message && (
         <motion.div
           key={message}
@@ -44,6 +45,7 @@ export default function NotificationBar({ message, onClose }) {
               <UserJoinBadge username={username} />
               <button
                 onClick={onClose}
+                aria-label="Dismiss notification"
                 style={{
                   width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: 'none',
@@ -71,6 +73,7 @@ export default function NotificationBar({ message, onClose }) {
               <span className="ty-notification">{text}</span>
               <button
                 onClick={onClose}
+                aria-label="Dismiss notification"
                 style={{
                   width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: 'none',
@@ -83,6 +86,7 @@ export default function NotificationBar({ message, onClose }) {
         </motion.div>
       )}
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
-    </AnimatePresence>
+      </AnimatePresence>
+    </div>
   );
 }

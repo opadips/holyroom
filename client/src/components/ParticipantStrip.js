@@ -127,35 +127,36 @@ export default function ParticipantStrip({
     }
 
     return (
-      <button
-        key={user.id}
-        type="button"
-        role="listitem"
-        onClick={() => onStageSelect?.(user.id)}
-        aria-pressed={staged}
-        aria-label={`View ${name}'s shared screen`}
-        style={{
-          ...tileBase,
-          cursor: 'pointer',
-          borderColor: staged ? 'rgba(157,143,247,0.55)' : 'rgba(124,107,240,0.22)',
-          background: staged ? 'rgba(124,107,240,0.14)' : 'rgba(124,107,240,0.06)',
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(157,143,247,0.75)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.borderColor = staged ? 'rgba(157,143,247,0.55)' : 'rgba(124,107,240,0.22)'; }}
-      >
-        {avatar}
-        <span style={{ ...nameStyle, color: staged ? 'var(--tx-primary)' : 'var(--tx-secondary)' }}>{name}</span>
-        {badge}
-        {dot}
-      </button>
+      <div key={user.id} role="listitem" style={{ display: 'flex', flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={() => onStageSelect?.(user.id)}
+          aria-pressed={staged}
+          aria-label={`View ${name}'s shared screen`}
+          style={{
+            ...tileBase,
+            cursor: 'pointer',
+            borderColor: staged ? 'rgba(157,143,247,0.55)' : 'rgba(124,107,240,0.22)',
+            background: staged ? 'rgba(124,107,240,0.14)' : 'rgba(124,107,240,0.06)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(157,143,247,0.75)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = staged ? 'rgba(157,143,247,0.55)' : 'rgba(124,107,240,0.22)'; }}
+        >
+          {avatar}
+          <span style={{ ...nameStyle, color: staged ? 'var(--tx-primary)' : 'var(--tx-secondary)' }}>{name}</span>
+          {badge}
+          {dot}
+        </button>
+      </div>
     );
   };
 
   const selfInitials = currentUser?.slice(0, 2).toUpperCase() || '?';
 
   return (
-    <div
+    <header
       className="panel-header"
+      aria-label="Room header"
       style={{
         display: 'flex', alignItems: 'center', gap: '0.75rem',
         padding: '0.5rem 1rem', minHeight: 56,
@@ -273,6 +274,6 @@ export default function ParticipantStrip({
           </span>
         )}
       </button>
-    </div>
+    </header>
   );
 }

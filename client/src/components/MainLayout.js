@@ -66,7 +66,7 @@ export default function MainLayout({
 
       <div className="flex flex-1 overflow-hidden" style={{ position: 'relative' }}>
         {/* Stage column — dock floats over the stage, never over the rail */}
-        <div style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex' }}>
+        <main style={{ position: 'relative', flex: 1, minWidth: 0, display: 'flex' }}>
           <Stage
             stageId={stageId}
             sharerName={stagedSharer?.name ?? ''}
@@ -94,7 +94,7 @@ export default function MainLayout({
             onOpenSettings={onOpenSettings}
             onLeave={onLeave}
           />
-        </div>
+        </main>
 
         {/* Chat rail — static column at lg+, overlay drawer below */}
         {chatOpen && (

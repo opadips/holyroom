@@ -328,12 +328,13 @@ export default function App() {
       } else if (e.key === 'Escape') {
         // Focus overlay owns Escape while open (it registers its own handler)
         if (document.body.classList.contains('cinematic-focus-open')) return;
+        if (settingsOpen) { setSettingsOpen(false); return; }
         setChatOpen(false);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [joined, toggleMute]);
+  }, [joined, toggleMute, settingsOpen]);
 
   const handleJoin = async (e) => {
     e.preventDefault();

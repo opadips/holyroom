@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const PRESET_OPTIONS = [
   { key: 'high',   width: 3840, height: 2160, fps: 60, label: '4K · 60fps' },
@@ -8,15 +8,26 @@ const PRESET_OPTIONS = [
 ];
 
 export default function SettingsPanel({ qualityPreset, setQualityPreset, customQuality, setCustomQuality, onClose }) {
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+
   const handleCustomChange = (field, value) => {
     setCustomQuality((prev) => ({ ...prev, [field]: parseInt(value, 10) || 0 }));
   };
 
   return (
-    <div style={{
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Settings"
+      style={{
       width: 300, maxHeight: '80vh', overflowY: 'auto',
       padding: '1.5rem',
-    }}>
+    }}
+    >
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <div>
@@ -28,7 +39,9 @@ export default function SettingsPanel({ qualityPreset, setQualityPreset, customQ
           </p>
         </div>
         <button
+          ref={closeRef}
           onClick={onClose}
+          aria-label="Close settings"
           style={{
             width: 28, height: 28,
             background: 'rgba(255,255,255,0.05)',
@@ -61,6 +74,7 @@ export default function SettingsPanel({ qualityPreset, setQualityPreset, customQ
             <button
               key={opt.key}
               onClick={() => setQualityPreset(opt.key)}
+              aria-pressed={qualityPreset === opt.key}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '0.625rem 0.875rem',
@@ -81,7 +95,7 @@ export default function SettingsPanel({ qualityPreset, setQualityPreset, customQ
                 {opt.label}
               </span>
               {qualityPreset === opt.key && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--tx-accent)', flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--tx-accent)', flexShrink: 0 }} aria-hidden="true">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               )}
@@ -105,12 +119,16 @@ export default function SettingsPanel({ qualityPreset, setQualityPreset, customQ
             { label: 'Frame rate (fps)', field: 'fps' },
           ].map(({ label, field }) => (
             <div key={field}>
-              <label style={{
-                display: 'block', fontSize: '0.68rem', fontWeight: 600,
-                letterSpacing: '0.06em', textTransform: 'uppercase',
-                color: 'var(--tx-tertiary)', marginBottom: '0.3rem',
-              }}>{label}</label>
+              <label
+                htmlFor={`custom-${field}`}
+                style={{
+                  display: 'block', fontSize: '0.68rem', fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: 'var(--tx-tertiary)', marginBottom: '0.3rem',
+                }}
+              >{label}</label>
               <input
+                id={`custom-${field}`}
                 type="number"
                 value={customQuality[field]}
                 onChange={(e) => handleCustomChange(field, e.target.value)}

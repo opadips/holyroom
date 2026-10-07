@@ -33,7 +33,14 @@ export default function ChatArea({ messages, isLoading = false, typingUsers = []
     <div
       className="flex-1 overflow-y-auto relative z-10"
       style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0' }}
+      role="log"
+      aria-label="Messages"
     >
+      <div role="status" aria-live="polite" className="sr-only">
+        {typingUsers.length
+          ? `${typingUsers.join(', ')} ${typingUsers.length === 1 ? 'is' : 'are'} typing…`
+          : ''}
+      </div>
       {isLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingTop: '0.5rem' }}>
           {[80, 60, 90, 50].map((w, i) => (

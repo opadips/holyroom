@@ -12,7 +12,7 @@ export default function ChatRail({
   onCollapse,
 }) {
   return (
-    <div
+    <aside
       id="chat-rail"
       aria-label="Chat"
       style={{
@@ -60,6 +60,6 @@ export default function ChatRail({
       <ChatArea messages={messages} isLoading={isLoading} typingUsers={typingUsers} />
 
       <InputBar input={input} setInput={setInput} onSend={onSend} />
-    </div>
+    </aside>
   );
 }
