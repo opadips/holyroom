@@ -132,7 +132,7 @@ export default function ParticipantStrip({
           type="button"
           onClick={() => onStageSelect?.(user.id)}
           aria-pressed={staged}
-          aria-label={`View ${name}'s shared screen`}
+          aria-label={`${name?.[0]?.toUpperCase()} ${name} — view shared screen`}
           style={{
             ...tileBase,
             cursor: 'pointer',
@@ -142,7 +142,7 @@ export default function ParticipantStrip({
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(157,143,247,0.75)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = staged ? 'rgba(157,143,247,0.55)' : 'rgba(124,107,240,0.22)'; }}
         >
-          {avatar}
+          {avatar}{' '}
           <span style={{ ...nameStyle, color: staged ? 'var(--tx-primary)' : 'var(--tx-secondary)' }}>{name}</span>
           {badge}
           {dot}

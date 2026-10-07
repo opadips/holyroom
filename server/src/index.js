@@ -35,7 +35,11 @@ let server;
 const keyPath = path.join(__dirname, '..', '..', 'key.pem');
 const certPath = path.join(__dirname, '..', '..', 'cert.pem');
 
-if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+if (process.env.HTTPS === 'false') {
+  const http = require('http');
+  server = http.createServer(app);
+  console.log('[INFO] HTTPS=false in env. Running HTTP server.');
+} else if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
   const https = require('https');
   const options = {
     key: fs.readFileSync(keyPath),

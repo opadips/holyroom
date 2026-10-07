@@ -295,24 +295,23 @@ export function StreamToggleButton({ isSharing, onStart, onStop, disabled = fals
         {ripples}
       </span>
 
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={streamState + String(isSharing)}
-          className="stream-btn__content"
-          initial={{ opacity: 0, y: 4  }}
-          animate={{ opacity: 1, y: 0  }}
-          exit={{    opacity: 0, y: -4 }}
-          transition={{ duration: duration.fast, ease: ease.out }}
-        >
-          {(streamState === 'activating' || streamState === 'deactivating')
-            ? <SpinnerIcon />
-            : isSharing
-              ? <StopIcon />
-              : <ShareIcon />
-          }
-          <span className="stream-btn__label">{label}</span>
-        </motion.span>
-      </AnimatePresence>
+      {/* Keyed swap (no AnimatePresence exit) so visible text never lags
+          behind aria-label — axe's label-content-name-mismatch rule */}
+      <motion.span
+        key={streamState + String(isSharing)}
+        className="stream-btn__content"
+        initial={{ opacity: 0, y: 4  }}
+        animate={{ opacity: 1, y: 0  }}
+        transition={{ duration: duration.fast, ease: ease.out }}
+      >
+        {(streamState === 'activating' || streamState === 'deactivating')
+          ? <SpinnerIcon />
+          : isSharing
+            ? <StopIcon />
+            : <ShareIcon />
+        }
+        <span className="stream-btn__label">{label}</span>
+      </motion.span>
 
       {/* border sweep وقتی active */}
       {isSharing && <span className="stream-btn__border-sweep" aria-hidden="true" />}

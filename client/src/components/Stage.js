@@ -209,7 +209,7 @@ export default function Stage({
         <button
           type="button"
           onClick={onOwnExpand}
-          aria-label="Expand your shared screen to fullscreen"
+          aria-label="You (sharing) — expand your shared screen to fullscreen"
           style={{
             position: 'absolute', right: 16, bottom: 84,
             width: 164, height: 100,
