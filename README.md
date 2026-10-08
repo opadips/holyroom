@@ -44,7 +44,7 @@
 ## 🔒 Privacy & Security
 
 Holyroom is designed with **privacy first**.
-- **Nothing is stored** – no messages, no voice, no screen recordings are ever saved. The server keeps only an in‑memory chat history (the last 200 messages) that is lost on restart.
+- **Nothing is stored** – no messages, no voice, no screen recordings are ever saved. The server never keeps chat history: messages are only relayed to currently connected clients, so refreshing the page starts you with an empty chat.
 - **No accounts, no tracking** – you just pick a display name; there are no emails, passwords, or personal data.
 - **Peer‑to‑peer media** – voice and screen sharing travel directly between browsers via WebRTC; they never pass through the server.
 - **Self‑hosted** – everything runs on your own machine. No third‑party cloud services, no telemetry, no ads.
@@ -76,7 +76,7 @@ Holyroom follows a **peer‑to‑peer mesh architecture** for both voice and scr
 - Each client establishes a **full mesh of audio connections** with all other users via `RTCPeerConnection`.
 - Screen sharing uses a **one‑to‑many broadcasting model**: the sharer creates a dedicated `RTCPeerConnection` for each viewer and adds the captured video track.
 - Signaling is handled through a **single Socket.io server** that relays offers, answers, and ICE candidates.
-- The server also manages **text chat** (in‑memory history, last 200 messages) and user lists.
+- The server also manages **text chat** (relayed only, never stored) and user lists.
 
 ```
 Browser A  ←── RTCPeerConnection ──→  Browser B

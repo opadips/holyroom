@@ -62,7 +62,6 @@ const io = new Server(server, {
 });
 
 const users = new Map();
-const messages = [];
 const sharers = new Map();
 const viewers = new Map(); // sharerId -> Set(viewerId)
 
@@ -77,7 +76,6 @@ io.on('connection', (socket) => {
     socket.username = cleanName;
 
     io.emit('userList', Array.from(users.entries()).map(([id, name]) => ({ id, name })));
-    socket.emit('messageHistory', messages);
 
     const activeSharers = Array.from(sharers.entries()).map(([id, name]) => ({ id, name }));
     socket.emit('activeSharers', activeSharers);
@@ -99,10 +97,6 @@ io.on('connection', (socket) => {
       text: text.trim(),
       time: new Date().toISOString(),
     };
-    messages.push(msg);
-    if (messages.length > 200) {
-      messages.shift();
-    }
     io.emit('newMessage', msg);
   });
 

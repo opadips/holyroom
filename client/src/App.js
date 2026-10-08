@@ -191,7 +191,6 @@ export default function App() {
       socket.on('connect', () => setMyId(socket.id));
       socket.emit('join', currentUser);
 
-      socket.on('messageHistory', setMessages);
       socket.on('newMessage',     (msg) => {
         setMessages((prev) => [...prev, msg]);
         if (
