@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import io from 'socket.io-client';
 import { useWebRTC } from './hooks/useWebRTC';
+import { useFileTransfer, MAX_FILE_SIZE } from './hooks/useFileTransfer';
 import LoginPage from './components/LoginPage';
 import MainLayout from './components/MainLayout';
 import SettingsPanel from './components/SettingsPanel';
@@ -113,7 +114,32 @@ export default function App() {
     handleAudioOffer, handleAudioAnswer, handleAudioIceCandidate,
     handleUserStartedSharing, handleUserStoppedSharing,
     setActiveSharers, setLocalStreamManually, setSharingState, reset,
+    fileChannels, registerFileChannelHandler,
   } = useWebRTC(socketRef, effectiveQuality);
+
+  const { sendFile, cancelSend, cancelIncoming, abortAll } = useFileTransfer(
+    fileChannels,
+    registerFileChannelHandler,
+    {
+      onUpdate: (id, patch) =>
+        setMessages((prev) =>
+          prev.map((m) => (m.type === 'file' && m.id === id ? { ...m, ...patch } : m))
+        ),
+      onIncoming: ({ peerId, id, name, size, mime }) => {
+        const sender = users.find((u) => u.id === peerId)?.name || 'Unknown';
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: 'file', id, username: sender,
+            time: new Date().toISOString(),
+            dir: 'in', name, size, mime,
+            state: 'receiving', progress: 0, peersDone: 0, peersTotal: 0,
+          },
+        ]);
+        if (!chatOpenRef.current) setUnreadCount((c) => c + 1);
+      },
+    }
+  );
 
   const shareSupported =
     typeof navigator !== 'undefined' &&
@@ -369,6 +395,7 @@ export default function App() {
   };
 
   const handleLeave = () => {
+    abortAll();
     socketRef.current?.disconnect();
     reset();
     setJoined(false);
@@ -450,6 +477,31 @@ export default function App() {
     });
   }, []);
 
+  const handleFile = (file) => {
+    if (!file || !joined) return;
+    if (file.size > MAX_FILE_SIZE) {
+      setNotification(`"${file.name}" is larger than the 200 MB limit`);
+      return;
+    }
+    const id = `${myId || 'me'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setMessages((prev) => [
+      ...prev,
+      {
+        type: 'file', id, username: currentUser,
+        time: new Date().toISOString(),
+        dir: 'out', name: file.name, size: file.size,
+        mime: file.type || 'application/octet-stream',
+        state: 'queued', progress: 0, peersDone: 0, peersTotal: 0,
+      },
+    ]);
+    sendFile(file, id);
+  };
+
+  const handleCancelFile = (msg) => {
+    if (msg.dir === 'out') cancelSend(msg.id);
+    else cancelIncoming(msg.id);
+  };
+
   const otherUsers = users.filter((u) => u.id !== myId);
   const currentLabel = liveQualityLabel || effectiveQuality.label;
 
@@ -494,6 +546,8 @@ export default function App() {
               messages={messages}
               input={input}
               setInput={setInput}
+              onFile={handleFile}
+              onCancelFile={handleCancelFile}
               isMuted={isMuted}
               onToggleMute={toggleMute}
               micState={micState}

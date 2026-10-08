@@ -254,6 +254,20 @@ for (const c of ['#34d399', '#fbbf24', '#9ca3af']) {
   check(`status dot ${c}`, parseHex(c), over(parseColor('rgba(255,255,255,0.04)'), SURFACES.panel), 3);
 }
 
+// 11. File-card transfer UI (ChatArea FileCardBody)
+// progress fill vs track over the chat panel (non-text UI ≥3)
+const fileTrack = over(parseColor('rgba(255,255,255,0.08)'), SURFACES.panel);
+for (const stop of ['#6559dc', '#7c6bf0']) {
+  check(`file progress fill ${stop} vs track`, parseHex(stop), fileTrack, 3);
+}
+// cancel button label on the panel
+check(
+  'btn-danger text on panel',
+  parseColor(token('--btn-danger-color')),
+  over(parseColor(token('--btn-danger-bg')), SURFACES.panel),
+  4.5
+);
+
 // ── run ───────────────────────────────────────────────────────────────────
 let failed = 0;
 const rows = [];

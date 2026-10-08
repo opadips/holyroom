@@ -10,6 +10,11 @@ export function useWebRTC(socketRef, quality) {
   const screenSendPCs = useRef(new Map()); // I am the sharer -> viewers (carries local tracks)
   const screenRecvPCs = useRef(new Map()); // viewer me <- sharer (receive-only)
   const audioPeerConnections = useRef(new Map());
+  // File transfer: 'files' data channels riding the voice PCs' SCTP association.
+  // One channel per peer, created by the offerer before createOffer so the
+  // m=application line rides the existing webrtcAudio* signaling (no renegotiation).
+  const fileChannels = useRef(new Map()); // peerId -> RTCDataChannel
+  const fileChannelHandlerRef = useRef(null); // set by useFileTransfer: (peerId, dc) => void
   // Shares this client currently WANTS to receive — gates handleOffer so a
   // late offer after unviewShare cannot silently re-subscribe.
   const viewingIntent = useRef(new Set());
@@ -103,6 +108,25 @@ export function useWebRTC(socketRef, quality) {
     },
     [socketRef]
   );
+
+  const attachFileChannel = useCallback((peerId, dc) => {
+    dc.bufferedAmountLowThreshold = 4 * 1024 * 1024;
+    fileChannels.current.set(peerId, dc);
+    dc.addEventListener('close', () => {
+      if (fileChannels.current.get(peerId) === dc) fileChannels.current.delete(peerId);
+    });
+    fileChannelHandlerRef.current?.(peerId, dc);
+  }, []);
+
+  // useFileTransfer registers a handler; late registrations replay existing channels.
+  const registerFileChannelHandler = useCallback((fn) => {
+    fileChannelHandlerRef.current = fn;
+    if (fn) {
+      fileChannels.current.forEach((dc, peerId) => {
+        if (dc.readyState !== 'closed') fn(peerId, dc);
+      });
+    }
+  }, []);
 
   const startVoiceCapture = useCallback(async () => {
     try {
@@ -308,8 +332,14 @@ export function useWebRTC(socketRef, quality) {
 
   // ── Voice mesh (unchanged) ──────────────────────────────────
   const createAudioPeerConnection = useCallback(
-    (partnerId) => {
+    (partnerId, initiator = false) => {
       const pc = new RTCPeerConnection(servers);
+      // Initiator creates the channel BEFORE createOffer so the offer carries
+      // the m=application (SCTP) line; the answerer receives it via ondatachannel.
+      if (initiator) {
+        attachFileChannel(partnerId, pc.createDataChannel('files', { ordered: true }));
+      }
+      pc.ondatachannel = (event) => attachFileChannel(partnerId, event.channel);
       pc.onicecandidate = (event) => {
         if (event.candidate && socketRef.current) {
           socketRef.current.emit('webrtcAudioIceCandidate', {
@@ -358,13 +388,13 @@ export function useWebRTC(socketRef, quality) {
       audioPeerConnections.current.set(partnerId, pc);
       return pc;
     },
-    [socketRef]
+    [socketRef, attachFileChannel]
   );
 
   const handleNewUser = useCallback(
     (user) => {
       if (user.id === socketRef.current?.id) return;
-      const pc = createAudioPeerConnection(user.id);
+      const pc = createAudioPeerConnection(user.id, true);
       pc.createOffer()
         .then((offer) => pc.setLocalDescription(offer))
         .then(() => {
@@ -432,6 +462,7 @@ export function useWebRTC(socketRef, quality) {
       audio.srcObject = null;
     });
     audioElements.current.clear();
+    fileChannels.current.clear();
     viewingIntent.current.clear();
     setActiveSharers([]);
     setIsSharing(false);
@@ -478,5 +509,7 @@ export function useWebRTC(socketRef, quality) {
     setLocalStreamManually,
     setSharingState,
     reset,
+    fileChannels,
+    registerFileChannelHandler,
   };
 }

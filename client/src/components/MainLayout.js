@@ -24,6 +24,8 @@ export default function MainLayout({
   input,
   setInput,
   onSend,
+  onFile,
+  onCancelFile,
   typingUsers = [],
 
   isMuted,
@@ -106,6 +108,8 @@ export default function MainLayout({
                 input={input}
                 setInput={setInput}
                 onSend={onSend}
+                onFile={onFile}
+                onCancelFile={onCancelFile}
                 typingUsers={typingUsers}
                 onCollapse={onToggleChat}
               />

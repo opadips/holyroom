@@ -17,6 +17,7 @@ import { spawn } from 'node:child_process';
 import http from 'node:http';
 import net from 'node:net';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -250,6 +251,19 @@ async function main() {
     await sleep(1200);
     await step('staged-remote-share', () => runAxe(page1, 'staged-remote-share'));
     await step('remote-sharer-view', () => runAxe(page2, 'remote-sharer-view'));
+
+    // Ephemeral file transfer: page2 attaches a file; a P2P card appears on
+    // both pages (progress bar while moving, ready card with Open/Save once
+    // done — axe accepts either state).
+    await sleep(1500); // let the voice-PC data channels finish opening
+    const tmpFile = path.join(os.tmpdir(), `holyroom-a11y-${Date.now()}.txt`);
+    fs.writeFileSync(tmpFile, `holyroom a11y file payload ${'x'.repeat(2 * 1024 * 1024)}`);
+    await page2.locator('input[type="file"]').setInputFiles(tmpFile);
+    await page1.getByRole('group', { name: /File .*\.txt/ }).first().waitFor({ timeout: 20000 });
+    await page2.getByRole('group', { name: /File .*\.txt/ }).first().waitFor({ timeout: 20000 });
+    await sleep(400);
+    await step('file-transfer-out', () => runAxe(page1, 'file-transfer-out'));
+    await step('file-transfer-in', () => runAxe(page2, 'file-transfer-in'));
   } finally {
     await browser.close().catch(() => {});
   }

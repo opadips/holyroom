@@ -22,7 +22,151 @@ function formatTime(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatArea({ messages, isLoading = false, typingUsers = [] }) {
+function formatSize(bytes) {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let i = 0;
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024;
+    i += 1;
+  }
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${units[i]}`;
+}
+
+const FILE_STATUS = {
+  queued:      () => ({ text: 'Waiting to send…',          color: 'var(--tx-secondary)' }),
+  sending:     (pct) => ({ text: `Sending… ${pct}%`,       color: 'var(--tx-accent)' }),
+  receiving:   (pct) => ({ text: `Receiving… ${pct}%`,     color: 'var(--tx-accent)' }),
+  ready:       (pct, msg) => ({
+    text: msg.dir === 'out'
+      ? `Sent to ${msg.peersDone} of ${msg.peersTotal} peer${msg.peersTotal === 1 ? '' : 's'}`
+      : 'Ready',
+    color: 'var(--tx-success)',
+  }),
+  canceled:    () => ({ text: 'Canceled',                  color: 'var(--tx-danger)' }),
+  interrupted: () => ({ text: 'Interrupted',               color: 'var(--tx-warning)' }),
+  failed:      (pct, msg) => ({
+    text: msg.peersTotal === 0
+      ? 'No one else was connected'
+      : `Failed — sent to ${msg.peersDone} of ${msg.peersTotal} peers`,
+    color: 'var(--tx-danger)',
+  }),
+};
+
+function FileCardBody({ msg, onCancel }) {
+  const { name, size, state, progress = 0, dir, url, mime } = msg;
+  const pct = Math.min(100, Math.round((progress || 0) * 100));
+  const active = state === 'queued' || state === 'sending' || state === 'receiving';
+  const status = (FILE_STATUS[state] || FILE_STATUS.failed)(pct, msg);
+  const showThumb = state === 'ready' && url && (mime || '').startsWith('image/');
+  const [c1, c2] = getAvatarColors(msg.username);
+
+  return (
+    <div
+      role="group"
+      aria-label={`File ${name} from ${msg.username}`}
+      style={{
+        marginTop: '0.2rem',
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12,
+        padding: '0.65rem 0.75rem',
+        display: 'flex',
+        gap: '0.7rem',
+        alignItems: 'center',
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          width: 44, height: 44, flexShrink: 0, borderRadius: 10,
+          overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: showThumb ? '#000' : `linear-gradient(135deg, ${c1}, ${c2})`,
+        }}
+      >
+        {showThumb ? (
+          <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+          <span style={{
+            color: 'var(--tx-primary)', fontSize: '0.84rem', fontWeight: 600,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+          }}>{name}</span>
+          <span style={{
+            color: 'var(--tx-ghost)', fontSize: '0.7rem', flexShrink: 0,
+            fontVariantNumeric: 'tabular-nums',
+          }}>{formatSize(size)}</span>
+        </div>
+        <div style={{ color: status.color, fontSize: '0.72rem', marginTop: 1 }}>{status.text}</div>
+
+        {active && (
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={pct}
+            aria-label={`Transfer progress for ${name}`}
+            style={{
+              height: 5, borderRadius: 3,
+              background: 'rgba(255,255,255,0.08)',
+              marginTop: 7, overflow: 'hidden',
+            }}
+          >
+            <div style={{
+              width: `${pct}%`, height: '100%', borderRadius: 3,
+              background: 'linear-gradient(90deg, #6559dc, #7c6bf0)',
+              transition: 'width 0.2s ease',
+            }} />
+          </div>
+        )}
+
+        {state === 'ready' && dir === 'in' && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.55rem' }}>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary"
+              aria-label={`Open ${name}`}
+              style={{ padding: '0.3rem 0.85rem', fontSize: '0.74rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            >Open</a>
+            <a
+              href={url}
+              download={name}
+              className="btn-primary"
+              aria-label={`Save ${name}`}
+              style={{ padding: '0.3rem 0.85rem', fontSize: '0.74rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            >Save</a>
+          </div>
+        )}
+      </div>
+
+      {active && onCancel && (
+        <button
+          type="button"
+          className="btn-danger"
+          onClick={() => onCancel(msg)}
+          aria-label={`Cancel transfer of ${name}`}
+          style={{ padding: '0.32rem 0.8rem', fontSize: '0.74rem', flexShrink: 0 }}
+        >Cancel</button>
+      )}
+    </div>
+  );
+}
+
+export default function ChatArea({ messages, isLoading = false, typingUsers = [], onCancelFile }) {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -123,7 +267,11 @@ export default function ChatArea({ messages, isLoading = false, typingUsers = []
                         {isLast && msg.status && <MessageStatus status={msg.status} />}
                       </div>
                     )}
-                    <p className="ty-chat-message" style={{ marginTop: 0 }}>{msg.text}</p>
+                    {msg.type === 'file' ? (
+                      <FileCardBody msg={msg} onCancel={onCancelFile} />
+                    ) : (
+                      <p className="ty-chat-message" style={{ marginTop: 0 }}>{msg.text}</p>
+                    )}
                   </div>
                 </div>
               </MessageMotion>

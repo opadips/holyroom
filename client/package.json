@@ -17,7 +17,8 @@
     "start": "cross-env HOST=0.0.0.0 react-scripts start",
     "build": "react-scripts build",
     "test:contrast": "node scripts/contrast-audit.mjs",
-    "test:a11y": "node scripts/axe-a11y.mjs"
+    "test:a11y": "node scripts/axe-a11y.mjs",
+    "test:files": "node scripts/smoke-file.mjs"
   },
   "browserslist": {
     "production": [

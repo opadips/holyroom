@@ -30,6 +30,7 @@
 ## ✨ Features
 
 - **Instant text chat** – no accounts needed, just a display name
+- **Ephemeral file sharing** – send files up to 200 MB straight to everyone over WebRTC data channels; nothing is stored anywhere and file cards vanish on refresh
 - **Voice mesh** – every participant hears everyone else in real time (requires HTTPS)
 - **Screen sharing** – share any monitor or window up to 4K at 60 fps, or set a custom resolution and frame rate (requires HTTPS)
 - **Mute / unmute** – one‑click microphone control with visual feedback
@@ -45,6 +46,7 @@
 
 Holyroom is designed with **privacy first**.
 - **Nothing is stored** – no messages, no voice, no screen recordings are ever saved. The server never keeps chat history: messages are only relayed to currently connected clients, so refreshing the page starts you with an empty chat.
+- **Files never touch the server** – file transfers ride WebRTC data channels directly between browsers; chunks live only in page memory, so a refresh destroys both partial and completed transfers.
 - **No accounts, no tracking** – you just pick a display name; there are no emails, passwords, or personal data.
 - **Peer‑to‑peer media** – voice and screen sharing travel directly between browsers via WebRTC; they never pass through the server.
 - **Self‑hosted** – everything runs on your own machine. No third‑party cloud services, no telemetry, no ads.
@@ -75,6 +77,7 @@ Holyroom follows a **peer‑to‑peer mesh architecture** for both voice and scr
 
 - Each client establishes a **full mesh of audio connections** with all other users via `RTCPeerConnection`.
 - Screen sharing uses a **one‑to‑many broadcasting model**: the sharer creates a dedicated `RTCPeerConnection` for each viewer and adds the captured video track.
+- File sharing uses a **`files` data channel on each voice `RTCPeerConnection`** (SCTP), so transfers are peer‑to‑peer and the server only relays the signaling.
 - Signaling is handled through a **single Socket.io server** that relays offers, answers, and ICE candidates.
 - The server also manages **text chat** (relayed only, never stored) and user lists.
 

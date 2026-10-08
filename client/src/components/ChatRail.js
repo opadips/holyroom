@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ChatArea from './ChatArea';
 import InputBar from './InputBar';
 
@@ -7,17 +7,38 @@ export default function ChatRail({
   input = '',
   setInput,
   onSend,
+  onFile,
+  onCancelFile,
   typingUsers = [],
   isLoading = false,
   onCollapse,
 }) {
+  const [dragOver, setDragOver] = useState(false);
+
   return (
     <aside
       id="chat-rail"
       aria-label="Chat"
+      onDragOver={(e) => {
+        if (!onFile) return;
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget)) return;
+        setDragOver(false);
+      }}
+      onDrop={(e) => {
+        if (!onFile) return;
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer?.files?.[0];
+        if (file) onFile(file);
+      }}
       style={{
         display: 'flex', flexDirection: 'column',
         height: '100%', minWidth: 0, overflow: 'hidden',
+        position: 'relative',
         background: 'var(--panel-bg)',
         backdropFilter: 'var(--panel-blur)',
         WebkitBackdropFilter: 'var(--panel-blur)',
@@ -25,6 +46,16 @@ export default function ChatRail({
         boxShadow: '-4px 0 48px rgba(0,0,0,0.45), inset 1px 0 0 rgba(255,255,255,0.025)',
       }}
     >
+      {dragOver && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 8, zIndex: 40, pointerEvents: 'none',
+            border: '2px dashed rgba(124,107,240,0.55)', borderRadius: 14,
+            background: 'rgba(124,107,240,0.06)',
+          }}
+        />
+      )}
       {/* Rail header */}
       <div
         style={{
@@ -57,9 +88,9 @@ export default function ChatRail({
         </button>
       </div>
 
-      <ChatArea messages={messages} isLoading={isLoading} typingUsers={typingUsers} />
+      <ChatArea messages={messages} isLoading={isLoading} typingUsers={typingUsers} onCancelFile={onCancelFile} />
 
-      <InputBar input={input} setInput={setInput} onSend={onSend} />
+      <InputBar input={input} setInput={setInput} onSend={onSend} onFile={onFile} />
     </aside>
   );
 }
