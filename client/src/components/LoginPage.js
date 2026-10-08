@@ -12,7 +12,7 @@ export default function LoginPage({ username, setUsername, joining, handleJoin }
   const canSubmit = username.trim().length > 0;
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+    <div className="app-height flex relative overflow-hidden">
       {/* Left panel — brand */}
       <motion.div
         className="hidden lg:flex flex-col justify-between w-[52%] relative overflow-hidden"
@@ -139,11 +139,11 @@ export default function LoginPage({ username, setUsername, joining, handleJoin }
         </div>
       </motion.div>
 
-      {/* Right panel — entry form */}
-      <div className="flex-1 flex items-center justify-center p-8 relative">
+      {/* Right panel — entry form (auto margins = centered, but never clipped on short screens) */}
+      <div className="flex-1 flex justify-center overflow-y-auto p-6 sm:p-8 relative">
         <motion.div
           className="w-full"
-          style={{ maxWidth: 400 }}
+          style={{ maxWidth: 400, margin: 'auto' }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}

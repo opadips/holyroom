@@ -92,7 +92,7 @@ body {
 .ty-btn--sm { font-size: var(--text-xs); letter-spacing: var(--tracking-wider); }
 
 /* ── Notification ── */
-.ty-notification { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--tx-primary); }
+.ty-notification { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--tx-primary); overflow-wrap: anywhere; }
 
 /* ── Utility ── */
 .ty-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

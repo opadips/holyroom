@@ -24,7 +24,7 @@ export default function SettingsPanel({ qualityPreset, setQualityPreset, customQ
       aria-modal="true"
       aria-label="Settings"
       style={{
-      width: 300, maxHeight: '80vh', overflowY: 'auto',
+      width: 'min(300px, calc(100vw - 32px))', maxHeight: '80vh', overflowY: 'auto',
       padding: '1.5rem',
     }}
     >
@@ -41,6 +41,7 @@ export default function SettingsPanel({ qualityPreset, setQualityPreset, customQ
         <button
           ref={closeRef}
           onClick={onClose}
+          className="btn-touch"
           aria-label="Close settings"
           style={{
             width: 28, height: 28,

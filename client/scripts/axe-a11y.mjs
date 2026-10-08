@@ -264,6 +264,47 @@ async function main() {
     await sleep(400);
     await step('file-transfer-out', () => runAxe(page1, 'file-transfer-out'));
     await step('file-transfer-in', () => runAxe(page2, 'file-transfer-in'));
+
+    // ── Mobile: 375×812 phone viewport (drawer layout, compact dock) ──
+    const ctx3 = await browser.newContext({
+      viewport: { width: 375, height: 812 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 3,
+    });
+    const page3 = await ctx3.newPage();
+    page3.on('pageerror', (e) => console.log(`  [page3 error] ${e.message}`));
+    await page3.goto(WEB_URL, { waitUntil: 'domcontentloaded' });
+    await page3.waitForSelector('input[placeholder="e.g. Alex"]', { timeout: 20000 });
+    await page3.addScriptTag({ path: axePath });
+    await sleep(500);
+    await step('mobile-login', () => runAxe(page3, 'mobile-login'));
+
+    await page3.fill('input[placeholder="e.g. Alex"]', 'Lin');
+    await page3.getByRole('button', { name: /Enter room/ }).click();
+    await page3.waitForSelector('[aria-label="Room controls"]', { timeout: 20000 });
+    // The chat drawer must start closed on phones so it never covers the stage…
+    if ((await page3.locator('#chat-rail').count()) > 0) {
+      throw new Error('chat drawer should start closed below 1024px');
+    }
+    await sleep(800);
+    await step('mobile-room', () => runAxe(page3, 'mobile-room'));
+
+    // …and open as an overlay drawer from the header toggle (tap backdrop closes it)
+    await page3.locator('button[aria-controls="chat-rail"]').click();
+    await page3.waitForSelector('#chat-rail', { timeout: 5000 });
+    await sleep(300);
+    await step('mobile-chat-drawer', () => runAxe(page3, 'mobile-chat-drawer'));
+    // backdrop's center sits under the drawer — tap the visible strip at left
+    await page3.locator('.rail-backdrop').click({ position: { x: 10, y: 400 } });
+    await page3.waitForSelector('#chat-rail', { state: 'detached', timeout: 5000 });
+
+    await page3.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page3.waitForSelector('[role="dialog"][aria-label="Settings"]', { timeout: 5000 });
+    await sleep(300);
+    await step('mobile-settings', () => runAxe(page3, 'mobile-settings'));
+    await page3.keyboard.press('Escape');
+    await page3.waitForSelector('[role="dialog"][aria-label="Settings"]', { state: 'detached', timeout: 5000 });
   } finally {
     await browser.close().catch(() => {});
   }

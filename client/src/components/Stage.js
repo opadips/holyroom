@@ -173,6 +173,7 @@ export default function Stage({
           {onExpand && (
             <button
               type="button"
+              className="btn-touch"
               onClick={onExpand}
               aria-label="Expand shared screen to fullscreen"
               title="Fullscreen"

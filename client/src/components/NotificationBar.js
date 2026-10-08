@@ -45,11 +45,13 @@ export default function NotificationBar({ message, onClose }) {
               <UserJoinBadge username={username} />
               <button
                 onClick={onClose}
+                className="btn-touch"
                 aria-label="Dismiss notification"
                 style={{
                   width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: 'none',
                   cursor: 'pointer', color: 'var(--tx-tertiary)', fontSize: '0.875rem',
+                  flexShrink: 0,
                 }}
               >×</button>
             </div>
@@ -57,6 +59,7 @@ export default function NotificationBar({ message, onClose }) {
             <div style={{
               display: 'flex', alignItems: 'center', gap: '0.625rem',
               padding: '0.55rem 1rem',
+              maxWidth: 'calc(100vw - 32px)',
               background: 'rgba(10,10,24,0.82)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
@@ -73,12 +76,13 @@ export default function NotificationBar({ message, onClose }) {
               <span className="ty-notification">{text}</span>
               <button
                 onClick={onClose}
+                className="btn-touch"
                 aria-label="Dismiss notification"
                 style={{
                   width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: 'none',
                   cursor: 'pointer', color: 'var(--tx-tertiary)', fontSize: '0.8rem',
-                  marginLeft: '0.25rem',
+                  marginLeft: '0.25rem', flexShrink: 0,
                 }}
               >×</button>
             </div>

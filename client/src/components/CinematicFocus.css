@@ -53,7 +53,8 @@
 /* ── Stage — the video wrapper ──────────────────────────────── */
 .cf-stage {
   position: relative;
-  width: min(88vw, 1400px);
+  /* 80vh cap keeps 16:9 intact on landscape phones without changing desktop */
+  width: min(88vw, 1400px, calc(80vh * 16 / 9));
   aspect-ratio: 16 / 9;
   border-radius: 12px;
   overflow: hidden;
@@ -366,6 +367,11 @@
   pointer-events: none;
   z-index: 5;
   transform-origin: center center;
+}
+
+/* ── Touch: no ESC key — the × alone is the affordance ─────── */
+@media (max-width: 639.98px), (pointer: coarse) {
+  .cf-hud__close span { display: none; }
 }
 
 /* ── Reduced motion ─────────────────────────────────────────── */

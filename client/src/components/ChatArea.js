@@ -138,14 +138,14 @@ function FileCardBody({ msg, onCancel }) {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-primary"
+              className="btn-primary btn-touch"
               aria-label={`Open ${name}`}
               style={{ padding: '0.3rem 0.85rem', fontSize: '0.74rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             >Open</a>
             <a
               href={url}
               download={name}
-              className="btn-primary"
+              className="btn-primary btn-touch"
               aria-label={`Save ${name}`}
               style={{ padding: '0.3rem 0.85rem', fontSize: '0.74rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             >Save</a>
@@ -156,7 +156,7 @@ function FileCardBody({ msg, onCancel }) {
       {active && onCancel && (
         <button
           type="button"
-          className="btn-danger"
+          className="btn-danger btn-touch"
           onClick={() => onCancel(msg)}
           aria-label={`Cancel transfer of ${name}`}
           style={{ padding: '0.32rem 0.8rem', fontSize: '0.74rem', flexShrink: 0 }}

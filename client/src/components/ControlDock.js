@@ -60,6 +60,7 @@ export default function ControlDock({
       <button
         type="button"
         onClick={onOpenSettings}
+        className="dock-quality-chip"
         aria-label={`Screen share quality: ${qualityLabel}. Open settings`}
         title={qualityTitle || `Share quality: ${qualityLabel}`}
         style={{

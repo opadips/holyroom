@@ -52,6 +52,9 @@ body {
   }
 }
 
+/* ── App height: dvh tracks the mobile URL bar, vh is the fallback ── */
+.app-height { height: 100vh; height: 100dvh; }
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -237,6 +240,31 @@ body {
 @keyframes shimmer {
   0%   { background-position: -200% center; }
   100% { background-position: 200% center; }
+}
+
+/* ══ Mobile (below sm = 640px) ══════════════════════════════
+   Breakpoints stay consistent with Tailwind's sm (640) / lg (1024)
+   and the existing rail + stream-btn media queries. */
+@media (max-width: 639.98px) {
+  /* Tap feedback: no double-tap zoom delay, no gray flash */
+  button, [role="button"], a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+  /* iOS auto-zooms inputs below 16px on focus — force it up */
+  input, textarea, select { font-size: 16px !important; }
+
+  /* ≥44px touch targets (inline width/height can't beat min-*) */
+  .glass-icon-btn { min-width: 44px; min-height: 44px; }
+  .btn-touch { min-width: 44px; min-height: 44px; }
+  .mute-btn, .stream-btn, .send-btn { min-width: 44px; min-height: 44px; }
+  .room-tile { min-height: 44px; }
+
+  /* Dock: the quality chip duplicates the settings gear — drop it */
+  .dock-quality-chip { display: none; }
+}
+
+/* ── Header: brand status is the first thing to go when narrow ── */
+@media (max-width: 479.98px) {
+  .header-brand-status { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

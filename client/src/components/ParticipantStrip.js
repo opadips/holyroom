@@ -118,7 +118,7 @@ export default function ParticipantStrip({
 
     if (!isSharer) {
       return (
-        <div key={user.id} role="listitem" style={tileBase} aria-label={label}>
+        <div key={user.id} role="listitem" className="room-tile" style={tileBase} aria-label={label}>
           {avatar}
           <span style={nameStyle}>{name}</span>
           {dot}
@@ -130,6 +130,7 @@ export default function ParticipantStrip({
       <div key={user.id} role="listitem" style={{ display: 'flex', flexShrink: 0 }}>
         <button
           type="button"
+          className="room-tile"
           onClick={() => onStageSelect?.(user.id)}
           aria-pressed={staged}
           aria-label={`${name?.[0]?.toUpperCase()} ${name} — view shared screen`}
@@ -180,6 +181,7 @@ export default function ParticipantStrip({
           </svg>
         </div>
         <span
+          className="header-brand-status"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
             fontSize: '0.74rem', color: 'var(--tx-secondary)', fontWeight: 500,
@@ -211,7 +213,7 @@ export default function ParticipantStrip({
         }}
       >
         {/* Self tile */}
-        <div role="listitem" style={tileBase} aria-label={`You${isSharing ? ' — sharing screen' : ''}`}>
+        <div role="listitem" className="room-tile" style={tileBase} aria-label={`You${isSharing ? ' — sharing screen' : ''}`}>
           <span
             aria-hidden="true"
             style={{

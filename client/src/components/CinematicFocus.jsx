@@ -55,14 +55,18 @@ export default function CinematicFocus({ stream, onClose, sharerName = '', isMut
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Auto-hide HUD after inactivity; show on mouse move
+  // Auto-hide HUD after inactivity; show on pointer move.
+  // Coarse pointers (touch) have no hover — keep the HUD up permanently.
+  const coarsePointer = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+
   const resetHudTimer = useCallback(() => {
     setHudVisible(true);
     clearTimeout(hudTimerRef.current);
+    if (coarsePointer) return;
     hudTimerRef.current = setTimeout(() => {
       setHudVisible(false);
     }, 3000);
-  }, []);
+  }, [coarsePointer]);
 
   useEffect(() => {
     resetHudTimer();
@@ -96,7 +100,8 @@ export default function CinematicFocus({ stream, onClose, sharerName = '', isMut
     <div
       className="cf-root"
       onClick={handleClose}
-      onMouseMove={handleMouseMove}
+      onPointerMove={handleMouseMove}
+      onPointerLeave={handleMouseLeave}
       role="dialog"
       aria-modal="true"
       aria-label={`Fullscreen screen share${sharerName ? ` — ${sharerName}` : ''}`}
@@ -120,7 +125,7 @@ export default function CinematicFocus({ stream, onClose, sharerName = '', isMut
         ref={containerRef}
         className="cf-stage"
         onClick={(e) => e.stopPropagation()}
-        onMouseLeave={handleMouseLeave}
+        onPointerLeave={handleMouseLeave}
         initial={{ opacity: 0, scale: 0.72, filter: 'blur(24px)' }}
         animate={isExiting ? {
           opacity: 0, scale: 0.78, filter: 'blur(18px)',

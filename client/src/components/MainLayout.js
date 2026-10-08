@@ -50,7 +50,7 @@ export default function MainLayout({
   const stagedSharer = activeSharers.find((s) => s.id === stageId);
 
   return (
-    <div className="flex flex-col h-screen relative z-10 overflow-hidden">
+    <div className="flex flex-col app-height relative z-10 overflow-hidden">
       <ParticipantStrip
         currentUser={currentUser}
         otherUsers={otherUsers}

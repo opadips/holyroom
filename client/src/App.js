@@ -80,7 +80,11 @@ export default function App() {
 
   // Stage-first layout state
   const [stageId, setStageId]                 = useState(null);
-  const [chatOpen, setChatOpen]               = useState(true);
+  // The rail is a static column at lg+ (starts open) and a drawer below
+  // 1024px (starts closed so it doesn't cover the stage on phones).
+  const [chatOpen, setChatOpen]               = useState(
+    () => typeof window === 'undefined' || window.innerWidth >= 1024
+  );
   const [unreadCount, setUnreadCount]         = useState(0);
   const [micState, setMicState]               = useState('ready'); // insecure|denied|nodevice|ready
   const [myId, setMyId]                       = useState('');
