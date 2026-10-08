@@ -28,6 +28,10 @@ export function useMagneticHover({ strength = 0.25, radius = 80 } = {}) {
     const el = ref.current;
     if (!el) return;
 
+    // Magnetic pull needs a real pointer — on touch devices this hook would
+    // otherwise keep a rAF loop writing style.transform on every frame.
+    if (window.matchMedia?.('(pointer: coarse)').matches) return;
+
     let animId;
     let tx = 0, ty = 0;
     let cx = 0, cy = 0;

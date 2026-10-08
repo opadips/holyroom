@@ -47,6 +47,34 @@ function createCore(fileChannelsRef, cbRef) {
   const urls = new Set(); // object URLs we minted (revoked on leave)
   const bound = new WeakSet();
   let aborted = false;
+  let waiting = false; // a pump is waiting for connecting channels to open
+
+  // Resolve once at least one channel is open (or none are still connecting,
+  // or the deadline passes). Listens on statechange + polls for new channels.
+  function waitForOpenChannel(timeoutMs) {
+    const has = (state) => {
+      let found = false;
+      fileChannelsRef.current.forEach((dc) => {
+        if (dc.readyState === state) found = true;
+      });
+      return found;
+    };
+    if (has('open') || !has('connecting')) return Promise.resolve();
+    return new Promise((resolve) => {
+      const deadline = Date.now() + timeoutMs;
+      const onState = () => {
+        if (has('open') || !has('connecting') || Date.now() > deadline) done();
+      };
+      const iv = setInterval(onState, 400);
+      fileChannelsRef.current.forEach((dc) => dc.addEventListener('statechange', onState));
+      function done() {
+        clearInterval(iv);
+        fileChannelsRef.current.forEach((dc) => dc.removeEventListener('statechange', onState));
+        resolve();
+      }
+      onState();
+    });
+  }
 
   const notify = () => cbRef.current;
 
@@ -194,17 +222,37 @@ function createCore(fileChannelsRef, cbRef) {
   }
 
   function pump() {
-    if (aborted || active || queue.length === 0) return;
-    const job = queue.shift();
-    const peers = new Map();
-    fileChannelsRef.current.forEach((dc, peerId) => {
-      if (dc.readyState === 'open') peers.set(peerId, { dc, sent: 0, state: 'pending' });
-    });
+    if (aborted || active || waiting || queue.length === 0) return;
+    // Peek (don't shift yet) so cancel/abort still see the job while we wait.
+    const job = queue[0];
+    const collectPeers = () => {
+      const peers = new Map();
+      fileChannelsRef.current.forEach((dc, peerId) => {
+        if (dc.readyState === 'open') peers.set(peerId, { dc, sent: 0, state: 'pending' });
+      });
+      return peers;
+    };
+    let peers = collectPeers();
     if (peers.size === 0) {
+      // Slow ICE: the 'files' channels may still be connecting — wait for
+      // them to open instead of failing the send outright.
+      const connecting = [...fileChannelsRef.current.values()].some(
+        (dc) => dc.readyState === 'connecting'
+      );
+      if (connecting) {
+        waiting = true;
+        waitForOpenChannel(20000).then(() => {
+          waiting = false;
+          pump();
+        });
+        return;
+      }
+      queue.shift();
       notify().onUpdate(job.id, { state: 'failed', peersDone: 0, peersTotal: 0 });
       pump();
       return;
     }
+    queue.shift();
     const a = {
       ...job,
       peers,

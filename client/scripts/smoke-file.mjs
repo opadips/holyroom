@@ -121,9 +121,10 @@ async function main() {
     }
     await sleep(2500); // voice PCs + data channels establish
 
-    // 1. Grace sends a 3 MB file
+    // 1. Grace sends a 3 MB file (receiver waits up to 45s: the send may hold
+    // up to 20s for slow-ICE data channels before the transfer itself starts)
     await page2.locator('input[type="file"]').setInputFiles(tmpFile);
-    await page1.getByRole('group', { name: /File smoke-payload\.bin/ }).first().waitFor({ timeout: 30000 });
+    await page1.getByRole('group', { name: /File smoke-payload\.bin/ }).first().waitFor({ timeout: 45000 });
 
     // 2. recipient reaches Ready with Open/Save
     await page1.getByRole('link', { name: 'Open smoke-payload.bin' }).waitFor({ timeout: 30000 });

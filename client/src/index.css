@@ -258,13 +258,14 @@ body {
   .mute-btn, .stream-btn, .send-btn { min-width: 44px; min-height: 44px; }
   .room-tile { min-height: 44px; }
 
-  /* Dock: the quality chip duplicates the settings gear — drop it */
-  .dock-quality-chip { display: none; }
+  /* Dock: the quality chip duplicates the settings gear — drop it.
+     (!important because both targets carry inline display styles) */
+  .dock-quality-chip { display: none !important; }
 }
 
 /* ── Header: brand status is the first thing to go when narrow ── */
 @media (max-width: 479.98px) {
-  .header-brand-status { display: none; }
+  .header-brand-status { display: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

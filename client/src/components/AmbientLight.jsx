@@ -26,6 +26,18 @@ import './AmbientLight.css';
 // دو لایه گلو با سرعت‌های lerp متفاوت → عمق حرکت
 function useProximityGlow(fastRef, slowRef) {
   useEffect(() => {
+    // Touch devices never move a pointer — park both glows centered once
+    // instead of running a perpetual loop that re-rasters blur layers.
+    if (window.matchMedia?.('(pointer: coarse)').matches) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      if (fastRef.current)
+        fastRef.current.style.transform = `translate(${cx - 350}px, ${cy - 350}px)`;
+      if (slowRef.current)
+        slowRef.current.style.transform = `translate(${cx - 500}px, ${cy - 500}px)`;
+      return;
+    }
+
     let tx = window.innerWidth  / 2;
     let ty = window.innerHeight / 2;
     let fx = tx, fy = ty; // fast layer
@@ -62,39 +74,12 @@ function useProximityGlow(fastRef, slowRef) {
   }, [fastRef, slowRef]);
 }
 
-// ─── Hook: Breathing intensity ────────────────────────────────
-// opacity پنل‌های نور به آرامی نفس می‌کشند
-function useBreathing(refs, baseOpacity, amplitude, speed) {
-  useEffect(() => {
-    let id;
-    let t = Math.random() * Math.PI * 2; // random phase start
-
-    const tick = () => {
-      t += speed;
-      const o = baseOpacity + Math.sin(t) * amplitude;
-      refs.forEach((ref) => {
-        if (ref.current) ref.current.style.opacity = o;
-      });
-      id = requestAnimationFrame(tick);
-    };
-
-    tick();
-    return () => cancelAnimationFrame(id);
-  }, [refs, baseOpacity, amplitude, speed]);
-}
-
 // ─── Main Component ────────────────────────────────────────────
 export default function AmbientLight() {
   const fastGlowRef  = useRef(null);
   const slowGlowRef  = useRef(null);
-  const haloTopRef   = useRef(null);
-  const haloLeftRef  = useRef(null);
 
   useProximityGlow(fastGlowRef, slowGlowRef);
-
-  // هاله بالا و چپ نفس می‌کشند با فاز مختلف
-  useBreathing([haloTopRef],  0.55, 0.20, 0.004);
-  useBreathing([haloLeftRef], 0.45, 0.18, 0.003);
 
   return (
     <div className="al-root" aria-hidden="true">
@@ -111,9 +96,9 @@ export default function AmbientLight() {
 
       {/* ── Panel halos ─────────────────────────────────────── */}
       {/* هاله بالا — روشن‌کردن Header */}
-      <div ref={haloTopRef} className="al-halo al-halo--top" />
+      <div className="al-halo al-halo--top" />
       {/* هاله چپ — روشن‌کردن Sidebar */}
-      <div ref={haloLeftRef} className="al-halo al-halo--left" />
+      <div className="al-halo al-halo--left" />
       {/* هاله پایین — InputBar glow */}
       <div className="al-halo al-halo--bottom" />
       {/* هاله راست — ناحیه چت */}

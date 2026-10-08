@@ -1,7 +1,11 @@
 import { useRef, useCallback, useState } from 'react';
 
 const servers = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+  iceServers: [
+    // Cloudflare as fallback: when Google's STUN is blackholed, ICE stalls
+    // for tens of seconds before host candidates win — files/chats join late.
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
+  ],
 };
 
 export function useWebRTC(socketRef, quality) {

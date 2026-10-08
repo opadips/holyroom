@@ -8,6 +8,10 @@ function useParticles(canvasRef) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
+    // Phones render far fewer particles — same look, much cheaper arcs.
+    const coarse = !!window.matchMedia?.("(pointer: coarse)").matches;
+    const COUNT = coarse ? 24 : 55;
+
     let particles = [];
     let animId;
     let W, H;
@@ -22,7 +26,7 @@ function useParticles(canvasRef) {
     const rand = (min, max) => Math.random() * (max - min) + min;
 
     // Spawn sparse, slow-drifting particles
-    for (let i = 0; i < 55; i++) {
+    for (let i = 0; i < COUNT; i++) {
       particles.push({
         x: rand(0, window.innerWidth),
         y: rand(0, window.innerHeight),
@@ -74,17 +78,30 @@ function useGrain(canvasRef) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    let animId;
 
-    const draw = () => {
+    // Full-screen per-pixel noise every frame starves the main thread on
+    // phones (visible as flicker + delayed UI), and its constant backdrop
+    // churn forces every glass panel to re-blur each frame. So: static
+    // grain on touch devices, and a cheap ~15fps regen on desktop.
+    const coarse = !!window.matchMedia?.("(pointer: coarse)").matches;
+    let imageData = null;
+    let lastW = 0;
+    let lastH = 0;
+    let animId = 0;
+    let lastPaint = 0;
+
+    const paint = () => {
       const W = window.innerWidth;
       const H = window.innerHeight;
-      canvas.width = W;
-      canvas.height = H;
-
-      const imageData = ctx.createImageData(W, H);
+      if (W !== lastW || H !== lastH) {
+        canvas.width = W;
+        canvas.height = H;
+        lastW = W;
+        lastH = H;
+        imageData = ctx.createImageData(W, H);
+      }
+      if (!imageData) return;
       const data = imageData.data;
-
       for (let i = 0; i < data.length; i += 4) {
         const v = Math.random() * 255;
         data[i] = v;
@@ -92,13 +109,30 @@ function useGrain(canvasRef) {
         data[i + 2] = v + 20; // slight blue tint
         data[i + 3] = Math.random() * 10; // very transparent
       }
-
       ctx.putImageData(imageData, 0, 0);
-      animId = requestAnimationFrame(draw);
     };
 
-    draw();
-    return () => cancelAnimationFrame(animId);
+    const onResize = () => paint();
+    window.addEventListener("resize", onResize);
+
+    if (coarse) {
+      paint(); // one static frame — zero per-frame cost
+      return () => window.removeEventListener("resize", onResize);
+    }
+
+    const draw = (ts) => {
+      animId = requestAnimationFrame(draw);
+      if (ts - lastPaint >= 66) {
+        lastPaint = ts;
+        paint();
+      }
+    };
+    animId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", onResize);
+    };
   }, [canvasRef]);
 }
 
@@ -107,6 +141,10 @@ function useMouseGlow(glowRef) {
   useEffect(() => {
     const el = glowRef.current;
     if (!el) return;
+
+    // No pointer on touch devices — a perpetual rAF loop writing transforms
+    // on a blur(80px) layer would only re-raster for nothing.
+    if (window.matchMedia?.("(pointer: coarse)").matches) return;
 
     let targetX = window.innerWidth / 2;
     let targetY = window.innerHeight / 2;
@@ -143,6 +181,9 @@ function useMouseGlow(glowRef) {
 // ─── Parallax Layers ───────────────────────────────────────────────────────────
 function useParallax(layer1Ref, layer2Ref) {
   useEffect(() => {
+    // Touch devices never move a pointer — skip the idle transform loop.
+    if (window.matchMedia?.("(pointer: coarse)").matches) return;
+
     let targetX = 0;
     let targetY = 0;
     let cx = 0;
